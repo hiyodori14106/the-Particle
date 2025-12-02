@@ -1,46 +1,53 @@
-// ゲームの状態を管理するオブジェクト
+// ゲームの状態管理
 const game = {
-    particles: 10, // 初期通貨
+    particles: 10,
     lastTick: Date.now(),
-    // 加速器（Generator）の定義
+    // 加速器を8個に拡張
     generators: [
-        { id: 0, name: "加速器 Mk I",   baseCost: 10,    costMult: 1.5, amount: 0, bought: 0, production: 1 },
-        { id: 1, name: "加速器 Mk II",  baseCost: 100,   costMult: 2.0, amount: 0, bought: 0, production: 1 },
-        { id: 2, name: "加速器 Mk III", baseCost: 1000,  costMult: 3.0, amount: 0, bought: 0, production: 1 },
-        { id: 3, name: "加速器 Mk IV",  baseCost: 10000, costMult: 5.0, amount: 0, bought: 0, production: 1 }
+        // id: 階層, name: 名前, baseCost: 初期コスト, costMult: コスト増加倍率, amount: 所持数, bought: 購入回数, production: 基礎生産倍率
+        { id: 0, name: "加速器 Mk I",    baseCost: 10,      costMult: 1.5,  amount: 0, bought: 0, production: 1 },
+        { id: 1, name: "加速器 Mk II",   baseCost: 100,     costMult: 1.8,  amount: 0, bought: 0, production: 1 },
+        { id: 2, name: "加速器 Mk III",  baseCost: 1e3,     costMult: 2.2,  amount: 0, bought: 0, production: 1 }, // 1,000
+        { id: 3, name: "加速器 Mk IV",   baseCost: 1e4,     costMult: 3.0,  amount: 0, bought: 0, production: 1 }, // 10,000
+        { id: 4, name: "加速器 Mk V",    baseCost: 1e6,     costMult: 4.0,  amount: 0, bought: 0, production: 1 }, // 1,000,000
+        { id: 5, name: "加速器 Mk VI",   baseCost: 1e8,     costMult: 6.0,  amount: 0, bought: 0, production: 1 }, // 1億
+        { id: 6, name: "加速器 Mk VII",  baseCost: 1e10,    costMult: 10.0, amount: 0, bought: 0, production: 1 }, // 100億
+        { id: 7, name: "加速器 Mk VIII", baseCost: 1e12,    costMult: 15.0, amount: 0, bought: 0, production: 1 }  // 1兆
     ]
 };
 
-// 数値を整形する関数（例: 1200 -> 1.20e3）
+// 数値整形（指数表記を見やすく）
 function format(num) {
-    if (num < 1000) return Math.floor(num); // 小数点以下切り捨て
-    return num.toExponential(2).replace('+', '');
+    if (num < 1000) return Math.floor(num);
+    // 指数部が大きすぎるときのための整形
+    let exponent = Math.floor(Math.log10(num));
+    let mantissa = num / Math.pow(10, exponent);
+    return mantissa.toFixed(2) + "e" + exponent;
 }
 
-// 現在のコストを計算する関数
+// コスト計算
 function getCost(gen) {
     return gen.baseCost * Math.pow(gen.costMult, gen.bought);
 }
 
-// ゲームループ（毎フレーム実行）
+// ゲームループ
 function gameLoop() {
     const now = Date.now();
-    const dt = (now - game.lastTick) / 1000; // 秒単位の経過時間
+    const dt = (now - game.lastTick) / 1000; 
     game.lastTick = now;
 
     // --- 生産ロジック ---
-    // 上位の加速器が下位の加速器を生産し、Mk I が粒子を生産する
     
-    // まず Mk I が粒子を生む
+    // 1. 最下層(Mk I)が粒子を生む
     const pps = game.generators[0].amount * game.generators[0].production;
     game.particles += pps * dt;
 
-    // Mk II以降は一つ下のランクの加速器(amount)を増やす
+    // 2. 上位層が下位層を生む (Mk VIII -> Mk VII ... -> Mk I)
+    // i=1(Mk II) から i=7(Mk VIII) までループ
     for (let i = 1; i < game.generators.length; i++) {
-        const producer = game.generators[i];
-        const target = game.generators[i - 1];
+        const producer = game.generators[i];     // 生産する側 (例: Mk VIII)
+        const target = game.generators[i - 1];   // 生産される側 (例: Mk VII)
         
-        // 生産量 = 所持数 * 倍率 * 時間
         target.amount += producer.amount * producer.production * dt;
     }
 
@@ -48,7 +55,7 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// 画面更新
+// UI更新
 function updateUI(pps) {
     document.getElementById('particle-display').textContent = `${format(game.particles)} 粒子`;
     document.getElementById('pps-display').textContent = `(+${format(pps)} /秒)`;
@@ -59,13 +66,11 @@ function updateUI(pps) {
         const amountTxt = document.getElementById(`amount-${index}`);
         const multTxt = document.getElementById(`mult-${index}`);
         
-        // ボタンのラベル更新
         btn.innerHTML = `購入<br>コスト: ${format(cost)}`;
-        
-        // 所持数の更新
         amountTxt.textContent = `所持数: ${format(gen.amount)}`;
+        multTxt.textContent = `x${format(gen.production)}`; // 倍率も見やすく整形
         
-        // 購入可能かどうかの見た目制御
+        // 購入可能判定
         if (game.particles >= cost) {
             btn.classList.remove('disabled');
         } else {
@@ -83,22 +88,23 @@ function buyGenerator(index) {
         game.particles -= cost;
         gen.amount += 1;
         gen.bought += 1;
-        
-        // おまけ：購入するたびに少し生産倍率が上がる（Antimatter Dimensions的要素）
-        gen.production *= 1.05; 
-        
-        // 倍率表示の更新
-        document.getElementById(`mult-${index}`).textContent = `x${gen.production.toFixed(2)}`;
+        // 購入ごとに生産倍率アップ (Antimatter Dimensions仕様)
+        gen.production *= 1.1; // 1.05だと8層では辛いので1.1倍に強化
+        updateUI(0); // 即座に反映
     }
 }
 
-// 初期化処理：HTML要素を生成
+// 初期化
 function init() {
     const container = document.getElementById('generator-container');
+    container.innerHTML = ''; // リロード時の重複防止
 
     game.generators.forEach((gen, index) => {
         const row = document.createElement('div');
         row.className = 'generator-row';
+        // 偶数・奇数で見やすく色を変えるクラスを追加
+        row.classList.add(index % 2 === 0 ? 'row-even' : 'row-odd');
+        
         row.innerHTML = `
             <div class="gen-info">
                 <div class="gen-name">${gen.name}</div>
@@ -106,15 +112,13 @@ function init() {
                 <div class="gen-multiplier" id="mult-${index}">x1.00</div>
             </div>
             <button id="btn-${index}" class="buy-btn" onclick="buyGenerator(${index})">
-                購入<br>コスト: ${gen.baseCost}
+                購入<br>コスト: ${format(gen.baseCost)}
             </button>
         `;
         container.appendChild(row);
     });
 
-    // ループ開始
     gameLoop();
 }
 
-// ゲーム起動
 init();
