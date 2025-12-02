@@ -1,11 +1,14 @@
 :root {
     --bg-color: #121212;
+    --panel-bg: #1a1a1a;
     --panel-even: #222;
     --panel-odd: #1e1e1e;
+    --sidebar-bg: #181818;
     --text-color: #e0e0e0;
-    --accent-color: #388e3c; /* 少し落ち着いた緑 */
+    --accent-color: #388e3c;
     --accent-hover: #2e7d32;
-    --disabled-color: #333;
+    --danger-color: #d32f2f;
+    --danger-hover: #b71c1c;
     --border-color: #444;
 }
 
@@ -14,114 +17,142 @@ body {
     color: var(--text-color);
     font-family: 'Consolas', 'Courier New', monospace;
     margin: 0;
-    padding: 10px;
-    display: flex;
-    justify-content: center;
-    user-select: none;
-    height: 100vh; /* 全画面表示 */
-    overflow: hidden; /* 本体のスクロールは無効化 */
+    height: 100vh;
+    overflow: hidden;
 }
 
-.container {
+/* 全体のレイアウト */
+.app-wrapper {
+    display: flex;
+    height: 100%;
     width: 100%;
-    max-width: 900px;
+}
+
+/* 左側：ゲームパネル */
+.game-panel {
+    flex: 1; /* 残りの幅をすべて使う */
     display: flex;
     flex-direction: column;
-    height: 100%;
+    border-right: 1px solid var(--border-color);
+    padding: 20px;
+    overflow-y: hidden; /* 内部スクロールのため */
 }
 
 header {
     flex: 0 0 auto;
     text-align: center;
     border-bottom: 2px solid var(--border-color);
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-    background-color: var(--bg-color);
-    z-index: 10;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
 }
 
 .currency-container h2 {
     font-size: 2.5rem;
     margin: 5px 0;
-    color: #fff;
-    text-shadow: 0 0 10px rgba(255,255,255,0.1);
+    text-shadow: 0 0 10px rgba(56, 142, 60, 0.2);
 }
 
-/* メインエリアをスクロール可能に */
-main {
+#generator-container {
     flex: 1 1 auto;
-    overflow-y: auto; /* ここだけスクロール */
-    padding-right: 5px;
-    /* スクロールバーのデザイン（Chrome/Safari用） */
+    overflow-y: auto;
+    padding-right: 10px;
+    /* スクロールバー */
     scrollbar-width: thin;
     scrollbar-color: var(--border-color) var(--bg-color);
 }
 
-main::-webkit-scrollbar {
-    width: 8px;
-}
-main::-webkit-scrollbar-track {
-    background: var(--bg-color);
-}
-main::-webkit-scrollbar-thumb {
-    background-color: var(--border-color);
-    border-radius: 4px;
-}
-
-/* 行のデザイン */
+/* 加速器の行デザイン */
 .generator-row {
     border: 1px solid var(--border-color);
     margin-bottom: 8px;
-    padding: 12px 20px;
+    padding: 10px 15px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-radius: 4px;
 }
-
-/* 縞模様にする */
 .row-even { background-color: var(--panel-even); }
 .row-odd { background-color: var(--panel-odd); }
 
-.gen-info { text-align: left; flex-grow: 1; }
-
-.gen-name {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: #fff;
-}
-
-.gen-amount { font-size: 0.9rem; color: #aaa; margin-top: 4px;}
+.gen-info { flex-grow: 1; }
+.gen-name { font-weight: bold; color: #fff; }
+.gen-amount { font-size: 0.9rem; color: #aaa; }
 .gen-multiplier { font-size: 0.9rem; color: var(--accent-color); }
 
 .buy-btn {
     background-color: var(--accent-color);
     color: white;
     border: none;
-    padding: 8px 16px;
+    padding: 8px 12px;
     font-family: inherit;
-    font-size: 0.9rem;
     cursor: pointer;
-    border-radius: 4px;
-    min-width: 160px;
+    border-radius: 3px;
+    min-width: 140px;
     text-align: right;
     transition: 0.1s;
-    line-height: 1.4;
 }
-
 .buy-btn:hover { background-color: var(--accent-hover); }
-.buy-btn:active { transform: translateY(2px); }
-.buy-btn.disabled {
-    background-color: var(--disabled-color);
-    color: #777;
-    cursor: not-allowed;
-    transform: none;
+.buy-btn.disabled { background-color: #333; color: #666; cursor: not-allowed; }
+
+/* 右側：サイドバー */
+.sidebar {
+    width: 280px; /* 固定幅 */
+    background-color: var(--sidebar-bg);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.3);
 }
 
-footer {
-    flex: 0 0 auto;
+.sidebar h3 {
+    margin-top: 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    font-size: 1.1rem;
+    color: #fff;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: #bbb;
+}
+
+.stat-value {
+    color: #fff;
+    font-weight: bold;
+}
+
+/* 設定ボタン */
+.setting-btn {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #444;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: 0.2s;
+}
+.setting-btn:hover { background-color: #555; }
+
+.setting-btn.danger { background-color: var(--danger-color); }
+.setting-btn.danger:hover { background-color: var(--danger-hover); }
+
+.save-info {
     text-align: center;
-    margin-top: 10px;
     font-size: 0.8rem;
+    color: #666;
+    margin-top: 5px;
+}
+
+.sidebar-footer {
+    margin-top: auto; /* 一番下に配置 */
+    text-align: center;
+    font-size: 0.7rem;
     color: #444;
 }
