@@ -1,0 +1,122 @@
+:root {
+    --bg-color: #1a1a1a;
+    --panel-color: #2b2b2b;
+    --text-color: #e0e0e0;
+    --accent-color: #4caf50;
+    --accent-hover: #45a049;
+    --disabled-color: #555;
+    --border-color: #444;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Courier New', Courier, monospace; /* 端末っぽいフォント */
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    user-select: none;
+}
+
+.container {
+    width: 100%;
+    max-width: 800px;
+    text-align: center;
+}
+
+header {
+    margin-bottom: 30px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 20px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    letter-spacing: 2px;
+}
+
+.currency-container h2 {
+    font-size: 3rem;
+    margin: 10px 0 5px 0;
+    color: #fff;
+}
+
+#pps-display {
+    color: #aaa;
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+/* ジェネレーター（加速器）の行 */
+.generator-row {
+    background-color: var(--panel-color);
+    border: 1px solid var(--border-color);
+    margin-bottom: 10px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.generator-row:hover {
+    background-color: #333;
+}
+
+.gen-info {
+    text-align: left;
+    flex-grow: 1;
+}
+
+.gen-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.gen-amount {
+    font-size: 1rem;
+    color: #bbb;
+}
+
+.gen-multiplier {
+    font-size: 0.9rem;
+    color: var(--accent-color);
+}
+
+/* 購入ボタン */
+.buy-btn {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-family: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    min-width: 200px;
+    text-align: right;
+    transition: 0.1s;
+}
+
+.buy-btn:hover {
+    background-color: var(--accent-hover);
+}
+
+.buy-btn:active {
+    transform: translateY(2px);
+}
+
+.buy-btn.disabled {
+    background-color: var(--disabled-color);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+footer {
+    margin-top: 50px;
+    color: #555;
+    font-size: 0.8rem;
+}
