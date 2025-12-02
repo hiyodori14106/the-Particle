@@ -7,22 +7,47 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>the-Particle</h1>
-            <div class="currency-container">
-                <h2 id="particle-display">0 粒子</h2>
-                <p id="pps-display">(+0.00 /秒)</p>
-            </div>
-        </header>
+    <div class="app-wrapper">
+        <!-- メインパネル（左側）：ゲーム画面 -->
+        <main class="game-panel">
+            <header>
+                <h1>the-Particle</h1>
+                <div class="currency-container">
+                    <h2 id="particle-display">0 粒子</h2>
+                    <p id="pps-display">(+0.00 /秒)</p>
+                </div>
+            </header>
 
-        <main id="generator-container">
-            <!-- ここにJavaScriptで加速器（ジェネレーター）が生成されます -->
+            <div id="generator-container">
+                <!-- ここに加速器が生成されます -->
+            </div>
         </main>
 
-        <footer>
-            <p>The Universe is expanding...</p>
-        </footer>
+        <!-- サイドバー（右側）：統計・設定 -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3>統計 (Statistics)</h3>
+                <div class="stat-item">
+                    <span>プレイ時間:</span>
+                    <span id="stat-time" class="stat-value">00:00:00</span>
+                </div>
+                <div class="stat-item">
+                    <span>総生産量:</span>
+                    <span id="stat-total" class="stat-value">0 粒子</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>設定 (Settings)</h3>
+                <button class="setting-btn" onclick="saveGame()">手動セーブ</button>
+                <button class="setting-btn danger" onclick="hardReset()">ハードリセット</button>
+                <p class="save-info" id="save-status">オートセーブ有効</p>
+            </div>
+            
+            <div class="sidebar-footer">
+                <p>v0.3.0 Alpha</p>
+            </div>
+        </aside>
     </div>
 
     <script src="script.js"></script>
