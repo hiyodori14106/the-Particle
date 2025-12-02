@@ -1,122 +1,127 @@
 :root {
-    --bg-color: #1a1a1a;
-    --panel-color: #2b2b2b;
+    --bg-color: #121212;
+    --panel-even: #222;
+    --panel-odd: #1e1e1e;
     --text-color: #e0e0e0;
-    --accent-color: #4caf50;
-    --accent-hover: #45a049;
-    --disabled-color: #555;
+    --accent-color: #388e3c; /* 少し落ち着いた緑 */
+    --accent-hover: #2e7d32;
+    --disabled-color: #333;
     --border-color: #444;
 }
 
 body {
     background-color: var(--bg-color);
     color: var(--text-color);
-    font-family: 'Courier New', Courier, monospace; /* 端末っぽいフォント */
+    font-family: 'Consolas', 'Courier New', monospace;
     margin: 0;
-    padding: 20px;
+    padding: 10px;
     display: flex;
     justify-content: center;
     user-select: none;
+    height: 100vh; /* 全画面表示 */
+    overflow: hidden; /* 本体のスクロールは無効化 */
 }
 
 .container {
     width: 100%;
-    max-width: 800px;
-    text-align: center;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 header {
-    margin-bottom: 30px;
+    flex: 0 0 auto;
+    text-align: center;
     border-bottom: 2px solid var(--border-color);
-    padding-bottom: 20px;
-}
-
-h1 {
-    margin: 0;
-    font-size: 2.5rem;
-    letter-spacing: 2px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    background-color: var(--bg-color);
+    z-index: 10;
 }
 
 .currency-container h2 {
-    font-size: 3rem;
-    margin: 10px 0 5px 0;
+    font-size: 2.5rem;
+    margin: 5px 0;
     color: #fff;
+    text-shadow: 0 0 10px rgba(255,255,255,0.1);
 }
 
-#pps-display {
-    color: #aaa;
-    font-size: 1.2rem;
-    margin: 0;
+/* メインエリアをスクロール可能に */
+main {
+    flex: 1 1 auto;
+    overflow-y: auto; /* ここだけスクロール */
+    padding-right: 5px;
+    /* スクロールバーのデザイン（Chrome/Safari用） */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) var(--bg-color);
 }
 
-/* ジェネレーター（加速器）の行 */
+main::-webkit-scrollbar {
+    width: 8px;
+}
+main::-webkit-scrollbar-track {
+    background: var(--bg-color);
+}
+main::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 4px;
+}
+
+/* 行のデザイン */
 .generator-row {
-    background-color: var(--panel-color);
     border: 1px solid var(--border-color);
-    margin-bottom: 10px;
-    padding: 15px;
+    margin-bottom: 8px;
+    padding: 12px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-radius: 4px;
-    transition: background 0.2s;
 }
 
-.generator-row:hover {
-    background-color: #333;
-}
+/* 縞模様にする */
+.row-even { background-color: var(--panel-even); }
+.row-odd { background-color: var(--panel-odd); }
 
-.gen-info {
-    text-align: left;
-    flex-grow: 1;
-}
+.gen-info { text-align: left; flex-grow: 1; }
 
 .gen-name {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: bold;
+    color: #fff;
 }
 
-.gen-amount {
-    font-size: 1rem;
-    color: #bbb;
-}
+.gen-amount { font-size: 0.9rem; color: #aaa; margin-top: 4px;}
+.gen-multiplier { font-size: 0.9rem; color: var(--accent-color); }
 
-.gen-multiplier {
-    font-size: 0.9rem;
-    color: var(--accent-color);
-}
-
-/* 購入ボタン */
 .buy-btn {
     background-color: var(--accent-color);
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 8px 16px;
     font-family: inherit;
-    font-size: 1rem;
+    font-size: 0.9rem;
     cursor: pointer;
     border-radius: 4px;
-    min-width: 200px;
+    min-width: 160px;
     text-align: right;
     transition: 0.1s;
+    line-height: 1.4;
 }
 
-.buy-btn:hover {
-    background-color: var(--accent-hover);
-}
-
-.buy-btn:active {
-    transform: translateY(2px);
-}
-
+.buy-btn:hover { background-color: var(--accent-hover); }
+.buy-btn:active { transform: translateY(2px); }
 .buy-btn.disabled {
     background-color: var(--disabled-color);
+    color: #777;
     cursor: not-allowed;
-    opacity: 0.7;
+    transform: none;
 }
 
 footer {
-    margin-top: 50px;
-    color: #555;
+    flex: 0 0 auto;
+    text-align: center;
+    margin-top: 10px;
     font-size: 0.8rem;
+    color: #444;
 }
