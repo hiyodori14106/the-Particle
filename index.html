@@ -1,3 +1,12 @@
+サイドバーを**「タブ切り替え式」かつ「開閉可能」**なUIに改造しました。
+
+タブ機能: 上部のボタンで「統計」と「設定」を切り替えます。
+開閉機能: サイドバー自体を閉じたり開いたりして、ゲーム画面を広く使えます。
+3つのファイルを以下のように更新してください。
+
+1. index.html
+サイドバーの中に「ナビゲーションボタン」と「コンテンツエリア」を作り、サイドバーを開くためのフロートボタン（ハンバーガーメニュー）を追加しました。
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -8,7 +17,7 @@
 </head>
 <body>
     <div class="app-wrapper">
-        <!-- メインパネル（左側）：ゲーム画面 -->
+        <!-- メインパネル（左側） -->
         <main class="game-panel">
             <header>
                 <h1>the-Particle</h1>
@@ -19,14 +28,29 @@
             </header>
 
             <div id="generator-container">
-                <!-- ここに加速器が生成されます -->
+                <!-- 加速器リスト -->
             </div>
+
+            <!-- サイドバーを開くボタン（サイドバーが閉じている時用） -->
+            <button id="sidebar-open-btn" class="toggle-btn open-btn" onclick="toggleSidebar()">
+                ☰ メニュー
+            </button>
         </main>
 
-        <!-- サイドバー（右側）：統計・設定 -->
-        <aside class="sidebar">
-            <div class="sidebar-section">
-                <h3>統計 (Statistics)</h3>
+        <!-- サイドバー（右側） -->
+        <aside id="sidebar" class="sidebar">
+            <!-- サイドバーヘッダー：タブと閉じるボタン -->
+            <div class="sidebar-header">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchTab('stats', this)">統計</button>
+                    <button class="tab-btn" onclick="switchTab('settings', this)">設定</button>
+                </div>
+                <button class="close-btn" onclick="toggleSidebar()">×</button>
+            </div>
+
+            <!-- 統計タブの中身 -->
+            <div id="tab-stats" class="sidebar-content active">
+                <h3>統計情報</h3>
                 <div class="stat-item">
                     <span>プレイ時間:</span>
                     <span id="stat-time" class="stat-value">00:00:00</span>
@@ -35,17 +59,28 @@
                     <span>総生産量:</span>
                     <span id="stat-total" class="stat-value">0 粒子</span>
                 </div>
+                <div class="stat-note">
+                    <p>宇宙は広がり続けています...</p>
+                </div>
             </div>
 
-            <div class="sidebar-section">
-                <h3>設定 (Settings)</h3>
-                <button class="setting-btn" onclick="saveGame()">手動セーブ</button>
-                <button class="setting-btn danger" onclick="hardReset()">ハードリセット</button>
-                <p class="save-info" id="save-status">オートセーブ有効</p>
+            <!-- 設定タブの中身 -->
+            <div id="tab-settings" class="sidebar-content">
+                <h3>ゲーム設定</h3>
+                <div class="setting-group">
+                    <button class="setting-btn" onclick="saveGame()">手動セーブ</button>
+                    <p class="save-info" id="save-status">オートセーブ有効</p>
+                </div>
+                
+                <div class="setting-group danger-zone">
+                    <h4>Danger Zone</h4>
+                    <button class="setting-btn danger" onclick="hardReset()">ハードリセット</button>
+                    <p class="desc">データを全て消去して最初からやり直します。</p>
+                </div>
             </div>
             
             <div class="sidebar-footer">
-                <p>v0.3.0 Alpha</p>
+                <p>v0.4.0 Beta</p>
             </div>
         </aside>
     </div>
