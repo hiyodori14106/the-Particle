@@ -17,22 +17,20 @@
                     <p id="pps-display">(+0.00 /秒)</p>
                 </div>
             </header>
-<!-- ヘッダー終了タグ </header> の直後、<div id="generator-container"> の直前に追加 -->
 
-<div id="prestige-container" class="prestige-banner" style="display: none;">
-    <div class="prestige-info">
-        現在のマルチバース倍率: <span id="current-mult-display">x1</span>
-    </div>
-    <button class="prestige-btn" onclick="doPrestige()">
-        <strong>次元リセットを実行</strong><br>
-        全生産量 2倍 & 最初から再開
-    </button>
-</div>
+            <!-- 次元リセット（プレステージ）バナー：条件を満たすと表示 -->
+            <div id="prestige-container" class="prestige-banner" style="display: none;">
+                <div class="prestige-info">
+                    現在のマルチバース倍率: <span id="current-mult-display">x1</span>
+                </div>
+                <button class="prestige-btn" onclick="doPrestige()">
+                    <strong>次元リセットを実行</strong><br>
+                    全生産量 2倍 & 最初から再開
+                </button>
+            </div>
 
-<div id="generator-container">
-    <!-- リストはそのまま -->
             <div id="generator-container">
-                <!-- 加速器リスト -->
+                <!-- JavaScriptでここに加速器リストが作られます -->
             </div>
 
             <!-- サイドバーを開くボタン（サイドバーが閉じている時だけ表示） -->
@@ -64,6 +62,10 @@
                         <span class="stat-label">総生産量</span>
                         <span id="stat-total" class="stat-val">0 粒子</span>
                     </div>
+                    <div class="stat-row">
+                        <span class="stat-label">リセット回数</span>
+                        <span id="stat-prestige" class="stat-val">0 回</span>
+                    </div>
                 </div>
 
                 <!-- 設定タブ -->
@@ -83,7 +85,7 @@
             </div>
 
             <div class="sidebar-footer">
-                ver 0.5.0 Beta
+                ver 0.6.0 Prestige Update
             </div>
         </aside>
     </div>
