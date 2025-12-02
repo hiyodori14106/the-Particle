@@ -1,9 +1,30 @@
-<!doctype html>
-<html>
-  <head>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>the-Particle</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>the-Particle</h1>
+            <div class="currency-container">
+                <h2 id="particle-display">0 粒子</h2>
+                <p id="pps-display">(+0.00 /秒)</p>
+            </div>
+        </header>
+
+        <main id="generator-container">
+            <!-- ここにJavaScriptで加速器（ジェネレーター）が生成されます -->
+        </main>
+
+        <footer>
+            <p>The Universe is expanding...</p>
+        </footer>
+    </div>
+
     <script src="script.js"></script>
-  </head>
-  <body>
-      <p><span id="particle"></span></p>
-  </body>
+</body>
 </html>
