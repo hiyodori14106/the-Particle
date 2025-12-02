@@ -1,15 +1,14 @@
 :root {
     --bg-color: #121212;
-    --panel-bg: #1a1a1a;
     --panel-even: #222;
     --panel-odd: #1e1e1e;
-    --sidebar-bg: #181818;
+    --sidebar-bg: #1a1a1a;
     --text-color: #e0e0e0;
     --accent-color: #388e3c;
     --accent-hover: #2e7d32;
     --danger-color: #d32f2f;
-    --danger-hover: #b71c1c;
     --border-color: #444;
+    --sidebar-width: 300px;
 }
 
 body {
@@ -21,21 +20,21 @@ body {
     overflow: hidden;
 }
 
-/* 全体のレイアウト */
 .app-wrapper {
     display: flex;
     height: 100%;
     width: 100%;
+    position: relative;
 }
 
-/* 左側：ゲームパネル */
+/* メインパネル */
 .game-panel {
-    flex: 1; /* 残りの幅をすべて使う */
+    flex: 1;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid var(--border-color);
     padding: 20px;
-    overflow-y: hidden; /* 内部スクロールのため */
+    overflow-y: hidden;
+    position: relative;
 }
 
 header {
@@ -56,12 +55,10 @@ header {
     flex: 1 1 auto;
     overflow-y: auto;
     padding-right: 10px;
-    /* スクロールバー */
     scrollbar-width: thin;
     scrollbar-color: var(--border-color) var(--bg-color);
 }
 
-/* 加速器の行デザイン */
 .generator-row {
     border: 1px solid var(--border-color);
     margin-bottom: 8px;
@@ -84,75 +81,145 @@ header {
     color: white;
     border: none;
     padding: 8px 12px;
-    font-family: inherit;
-    cursor: pointer;
     border-radius: 3px;
     min-width: 140px;
+    cursor: pointer;
     text-align: right;
-    transition: 0.1s;
 }
 .buy-btn:hover { background-color: var(--accent-hover); }
 .buy-btn.disabled { background-color: #333; color: #666; cursor: not-allowed; }
 
-/* 右側：サイドバー */
+/* --- サイドバー関連 --- */
+
 .sidebar {
-    width: 280px; /* 固定幅 */
+    width: var(--sidebar-width);
     background-color: var(--sidebar-bg);
-    padding: 20px;
+    border-left: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    gap: 30px;
-    box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+    transition: width 0.3s ease, padding 0.3s ease; /* 滑らかに動く */
+    overflow: hidden; /* 閉じるとき中身を隠す */
+    flex-shrink: 0; /* 幅が潰れないようにする */
 }
 
-.sidebar h3 {
-    margin-top: 0;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 10px;
-    font-size: 1.1rem;
-    color: #fff;
+/* サイドバーが閉じている時の状態 */
+.sidebar.closed {
+    width: 0;
+    padding: 0;
+    border-left: none;
 }
 
-.stat-item {
+.sidebar-header {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    font-size: 0.9rem;
-    color: #bbb;
+    align-items: center;
+    padding: 10px;
+    background-color: #222;
+    border-bottom: 1px solid var(--border-color);
+    min-width: var(--sidebar-width); /* 縮小時に崩れないように固定 */
 }
 
-.stat-value {
-    color: #fff;
+/* タブボタン */
+.tab-buttons {
+    flex-grow: 1;
+    display: flex;
+    gap: 5px;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: #888;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-family: inherit;
     font-weight: bold;
+    border-bottom: 2px solid transparent;
 }
 
-/* 設定ボタン */
+.tab-btn:hover { color: #fff; }
+
+.tab-btn.active {
+    color: var(--accent-color);
+    border-bottom: 2px solid var(--accent-color);
+}
+
+/* 閉じるボタン */
+.close-btn {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0 10px;
+}
+.close-btn:hover { color: #fff; }
+
+/* コンテンツエリア */
+.sidebar-content {
+    display: none; /* デフォルト非表示 */
+    padding: 20px;
+    flex-grow: 1;
+    min-width: var(--sidebar-width);
+    animation: fadeIn 0.3s;
+}
+
+.sidebar-content.active {
+    display: block; /* アクティブなタブだけ表示 */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 統計・設定の中身 */
+.sidebar h3 { margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; }
+.stat-item { display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px dotted #333; padding-bottom: 4px;}
+.stat-value { color: #fff; font-weight: bold; }
+
+.setting-group { margin-bottom: 30px; }
 .setting-btn {
     width: 100%;
     padding: 10px;
-    margin-bottom: 10px;
     background-color: #444;
     color: white;
     border: none;
     cursor: pointer;
-    font-family: inherit;
-    transition: 0.2s;
+    margin-bottom: 5px;
 }
 .setting-btn:hover { background-color: #555; }
-
 .setting-btn.danger { background-color: var(--danger-color); }
-.setting-btn.danger:hover { background-color: var(--danger-hover); }
 
-.save-info {
-    text-align: center;
-    font-size: 0.8rem;
-    color: #666;
-    margin-top: 5px;
-}
+.danger-zone { border: 1px solid #522; padding: 10px; border-radius: 4px; background: rgba(80, 0, 0, 0.2); }
+.danger-zone h4 { color: #ff5555; margin-top: 0; }
+.desc { font-size: 0.75rem; color: #999; margin: 0; }
 
 .sidebar-footer {
-    margin-top: auto; /* 一番下に配置 */
+    padding: 10px;
     text-align: center;
     font-size: 0.7rem;
-    color: #444;
+    color: #555;
+    min-width: var(--sidebar-width);
+}
+
+/* 開くボタン（ハンバーガー） */
+.open-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: var(--panel-even);
+    border: 1px solid var(--border-color);
+    color: #fff;
+    padding: 8px 15px;
+    cursor: pointer;
+    z-index: 100;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    display: none; /* デフォルトは非表示 */
+}
+.open-btn:hover { background-color: #333; }
+
+/* サイドバーが閉じている時だけ開くボタンを表示 */
+.app-wrapper.sidebar-hidden .open-btn {
+    display: block;
 }
