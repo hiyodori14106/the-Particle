@@ -1,225 +1,281 @@
 :root {
-    --bg-color: #121212;
-    --panel-even: #222;
-    --panel-odd: #1e1e1e;
+    --bg-color: #0f0f0f;
+    --panel-bg: #161616;
     --sidebar-bg: #1a1a1a;
-    --text-color: #e0e0e0;
-    --accent-color: #388e3c;
-    --accent-hover: #2e7d32;
-    --danger-color: #d32f2f;
-    --border-color: #444;
-    --sidebar-width: 300px;
+    --accent-color: #00e676; /* ネオンっぽい緑 */
+    --accent-dark: #00a856;
+    --text-main: #ffffff;
+    --text-sub: #a0a0a0;
+    --border-color: #333;
+    --danger-color: #ff4444;
+    --font-mono: 'Consolas', 'Monaco', monospace;
 }
+
+* { box-sizing: border-box; }
 
 body {
     background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: 'Consolas', 'Courier New', monospace;
+    color: var(--text-main);
+    font-family: var(--font-mono);
     margin: 0;
     height: 100vh;
     overflow: hidden;
 }
 
+/* レイアウト全体 */
 .app-wrapper {
     display: flex;
-    height: 100%;
     width: 100%;
+    height: 100%;
     position: relative;
+    transition: 0.3s ease; /* 全体の動き */
 }
 
-/* メインパネル */
+/* 左側：ゲーム画面 */
 .game-panel {
     flex: 1;
     display: flex;
     flex-direction: column;
     padding: 20px;
-    overflow-y: hidden;
     position: relative;
+    z-index: 1;
 }
 
 header {
-    flex: 0 0 auto;
     text-align: center;
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 15px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
 }
+
+h1 { margin: 0; font-size: 2rem; letter-spacing: 4px; opacity: 0.8; }
 
 .currency-container h2 {
-    font-size: 2.5rem;
-    margin: 5px 0;
-    text-shadow: 0 0 10px rgba(56, 142, 60, 0.2);
+    font-size: 3rem;
+    margin: 10px 0;
+    text-shadow: 0 0 15px rgba(0, 230, 118, 0.3);
 }
+#pps-display { color: var(--text-sub); margin: 0; }
 
+/* リストエリア */
 #generator-container {
-    flex: 1 1 auto;
+    flex: 1;
     overflow-y: auto;
-    padding-right: 10px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-color) var(--bg-color);
+    padding-right: 5px;
 }
+#generator-container::-webkit-scrollbar { width: 6px; }
+#generator-container::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
+/* 加速器の行デザイン */
 .generator-row {
-    border: 1px solid var(--border-color);
+    background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+    border-left: 3px solid var(--border-color);
     margin-bottom: 8px;
-    padding: 10px 15px;
+    padding: 12px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-radius: 4px;
+    transition: background 0.2s, border-left-color 0.2s;
 }
-.row-even { background-color: var(--panel-even); }
-.row-odd { background-color: var(--panel-odd); }
+.generator-row:hover {
+    background: rgba(255,255,255,0.06);
+    border-left-color: var(--accent-color);
+}
 
 .gen-info { flex-grow: 1; }
-.gen-name { font-weight: bold; color: #fff; }
-.gen-amount { font-size: 0.9rem; color: #aaa; }
-.gen-multiplier { font-size: 0.9rem; color: var(--accent-color); }
+.gen-name { font-size: 1.1rem; font-weight: bold; margin-bottom: 4px; }
+.gen-amount { color: var(--text-sub); font-size: 0.9rem; }
+.gen-multiplier { color: var(--accent-color); font-size: 0.9rem; }
 
-.buy-btn {
-    background-color: var(--accent-color);
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 3px;
-    min-width: 140px;
+/* 共通ボタンスタイル */
+button {
+    font-family: var(--font-mono);
+    outline: none;
     cursor: pointer;
-    text-align: right;
 }
-.buy-btn:hover { background-color: var(--accent-hover); }
-.buy-btn.disabled { background-color: #333; color: #666; cursor: not-allowed; }
 
-/* --- サイドバー関連 --- */
+/* 購入ボタン */
+.buy-btn {
+    background-color: transparent;
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+    padding: 8px 16px;
+    border-radius: 2px;
+    text-align: right;
+    min-width: 150px;
+    transition: all 0.2s;
+    font-weight: bold;
+}
+.buy-btn:hover {
+    background-color: var(--accent-color);
+    color: #000;
+    box-shadow: 0 0 10px var(--accent-color);
+}
+.buy-btn.disabled {
+    border-color: #444;
+    color: #555;
+    background-color: transparent;
+    cursor: not-allowed;
+    box-shadow: none;
+}
 
+/* --- サイドバー --- */
 .sidebar {
-    width: var(--sidebar-width);
+    width: 320px;
     background-color: var(--sidebar-bg);
     border-left: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    transition: width 0.3s ease, padding 0.3s ease; /* 滑らかに動く */
-    overflow: hidden; /* 閉じるとき中身を隠す */
-    flex-shrink: 0; /* 幅が潰れないようにする */
+    box-shadow: -5px 0 20px rgba(0,0,0,0.5);
+    transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+    flex-shrink: 0; /* 縮小防止 */
 }
 
-/* サイドバーが閉じている時の状態 */
-.sidebar.closed {
-    width: 0;
-    padding: 0;
-    border-left: none;
+.app-wrapper.closed .sidebar {
+    margin-right: -320px; /* 画面外へスライド */
 }
 
 .sidebar-header {
     display: flex;
     align-items: center;
-    padding: 10px;
-    background-color: #222;
+    padding: 0;
+    background-color: #111;
     border-bottom: 1px solid var(--border-color);
-    min-width: var(--sidebar-width); /* 縮小時に崩れないように固定 */
+    height: 50px;
 }
 
-/* タブボタン */
-.tab-buttons {
-    flex-grow: 1;
+.tab-container {
+    flex: 1;
     display: flex;
-    gap: 5px;
+    height: 100%;
 }
 
 .tab-btn {
+    flex: 1;
     background: transparent;
     border: none;
-    color: #888;
-    padding: 8px 12px;
-    cursor: pointer;
-    font-family: inherit;
+    border-bottom: 3px solid transparent;
+    color: var(--text-sub);
     font-weight: bold;
-    border-bottom: 2px solid transparent;
+    transition: 0.2s;
 }
-
-.tab-btn:hover { color: #fff; }
-
+.tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
 .tab-btn.active {
     color: var(--accent-color);
-    border-bottom: 2px solid var(--accent-color);
+    border-bottom-color: var(--accent-color);
 }
 
-/* 閉じるボタン */
 .close-btn {
-    background: none;
+    width: 50px;
+    height: 100%;
+    background: transparent;
     border: none;
-    color: #888;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0 10px;
+    color: var(--text-sub);
+    font-size: 1.2rem;
+    border-left: 1px solid var(--border-color);
 }
-.close-btn:hover { color: #fff; }
+.close-btn:hover { color: #fff; background: #cc3333; border-color: #cc3333; }
 
-/* コンテンツエリア */
-.sidebar-content {
-    display: none; /* デフォルト非表示 */
+/* サイドバー中身 */
+.sidebar-body {
     padding: 20px;
-    flex-grow: 1;
-    min-width: var(--sidebar-width);
-    animation: fadeIn 0.3s;
+    flex: 1;
+    overflow-y: auto;
 }
 
-.sidebar-content.active {
-    display: block; /* アクティブなタブだけ表示 */
+.sidebar-content { display: none; animation: fadeIn 0.3s; }
+.sidebar-content.active { display: block; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+.sidebar h3 {
+    margin-top: 0;
+    font-size: 0.9rem;
+    color: var(--text-sub);
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+    margin-bottom: 15px;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
+/* 統計の行 */
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 4px;
 }
+.stat-label { color: #aaa; font-size: 0.9rem; }
+.stat-val { color: #fff; font-weight: bold; }
 
-/* 統計・設定の中身 */
-.sidebar h3 { margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; }
-.stat-item { display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px dotted #333; padding-bottom: 4px;}
-.stat-value { color: #fff; font-weight: bold; }
-
-.setting-group { margin-bottom: 30px; }
-.setting-btn {
+/* 設定ボタン類 */
+.ui-btn {
     width: 100%;
-    padding: 10px;
-    background-color: #444;
-    color: white;
+    padding: 12px;
     border: none;
-    cursor: pointer;
-    margin-bottom: 5px;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    transition: 0.2s;
 }
-.setting-btn:hover { background-color: #555; }
-.setting-btn.danger { background-color: var(--danger-color); }
-
-.danger-zone { border: 1px solid #522; padding: 10px; border-radius: 4px; background: rgba(80, 0, 0, 0.2); }
-.danger-zone h4 { color: #ff5555; margin-top: 0; }
-.desc { font-size: 0.75rem; color: #999; margin: 0; }
-
-.sidebar-footer {
-    padding: 10px;
-    text-align: center;
-    font-size: 0.7rem;
-    color: #555;
-    min-width: var(--sidebar-width);
+.ui-btn.primary {
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #555;
 }
+.ui-btn.primary:hover { background-color: #444; border-color: #666; }
 
-/* 開くボタン（ハンバーガー） */
-.open-btn {
+.danger-zone {
+    margin-top: 30px;
+    border: 1px solid var(--danger-color);
+    padding: 15px;
+    border-radius: 4px;
+    background: rgba(255, 68, 68, 0.05);
+}
+.danger-zone h4 { color: var(--danger-color); margin: 0 0 10px 0; }
+.danger-zone p { font-size: 0.8rem; color: #aaa; margin-bottom: 10px; }
+
+.ui-btn.danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+.ui-btn.danger:hover { background-color: #d32f2f; }
+
+.status-text { text-align: center; font-size: 0.8rem; color: #666; }
+.sidebar-footer { text-align: center; padding: 15px; color: #444; font-size: 0.7rem; border-top: 1px solid var(--border-color); }
+
+/* フロートメニューボタン（閉じた時に出るやつ） */
+.float-menu-btn {
     position: absolute;
     top: 20px;
     right: 20px;
-    background-color: var(--panel-even);
-    border: 1px solid var(--border-color);
+    background-color: #222;
     color: #fff;
-    padding: 8px 15px;
-    cursor: pointer;
+    border: 1px solid var(--border-color);
+    padding: 10px 20px;
+    border-radius: 30px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    font-weight: bold;
     z-index: 100;
-    border-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
     display: none; /* デフォルトは非表示 */
+    transition: 0.2s;
 }
-.open-btn:hover { background-color: #333; }
+.float-menu-btn:hover {
+    background-color: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.6);
+}
 
-/* サイドバーが閉じている時だけ開くボタンを表示 */
-.app-wrapper.sidebar-hidden .open-btn {
+/* サイドバーが閉じている時だけボタンを表示 */
+.app-wrapper.closed .float-menu-btn {
     display: block;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
