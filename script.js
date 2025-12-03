@@ -1,8 +1,8 @@
 /**
- * the-Particle Complete Edition (Bugfix Ver)
+ * the-Particle Complete Edition (Final Stable Ver)
  * - Prestige Req: 1 + 10*n Mk.8
  * - Prestige Mult: 1.2x
- * - Fixed format function to show decimals
+ * - UI Stabilization: Fixed formatting to prevent text jitter
  */
 
 // --- ゲームデータ定義 ---
@@ -28,13 +28,13 @@ function getInitialState() {
 
 // グローバル変数
 let game = getInitialState();
-const SAVE_KEY = 'theParticleComplete_v2_modified'; 
+const SAVE_KEY = 'theParticleComplete_v2_stable'; 
 
-// --- ユーティリティ: 数値整形 (修正版) ---
+// --- ユーティリティ: 数値整形 (安定化版) ---
 function format(num) {
-  // 1000未満の場合は小数点以下2桁まで考慮して表示
-  // Number(...).toString() を使うことで、"1.20" は "1.2" に、"1.00" は "1" になり見やすくなります
-  if (num < 1000) return Number(num.toFixed(2)).toString();
+  // 1000未満は常に小数点2桁固定にして、表示幅のガタつきを防ぐ
+  // 例: 1.2 -> "1.20", 5 -> "5.00"
+  if (num < 1000) return num.toFixed(2);
 
   let exponent = Math.floor(Math.log10(num));
   let mantissa = num / Math.pow(10, exponent);
@@ -55,6 +55,7 @@ function getCost(gen) {
 }
 
 function getGlobalMultiplier() {
+  // 倍率 1.2倍
   return Math.pow(1.2, game.prestigeCount);
 }
 
@@ -333,3 +334,11 @@ function init() {
 }
 
 init();
+
+
+
+
+
+Evaluate
+
+Compare
