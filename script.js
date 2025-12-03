@@ -1,7 +1,8 @@
 /**
- * the-Particle Complete Edition (Modified)
+ * the-Particle Complete Edition (Bugfix Ver)
  * - Prestige Req: 1 + 10*n Mk.8
  * - Prestige Mult: 1.2x
+ * - Fixed format function to show decimals
  */
 
 // --- ゲームデータ定義 ---
@@ -27,11 +28,14 @@ function getInitialState() {
 
 // グローバル変数
 let game = getInitialState();
-const SAVE_KEY = 'theParticleComplete_v2_modified'; // バージョン変更によりキーを変更推奨
+const SAVE_KEY = 'theParticleComplete_v2_modified'; 
 
-// --- ユーティリティ: 数値整形 ---
+// --- ユーティリティ: 数値整形 (修正版) ---
 function format(num) {
-  if (num < 1000) return Math.floor(num);
+  // 1000未満の場合は小数点以下2桁まで考慮して表示
+  // Number(...).toString() を使うことで、"1.20" は "1.2" に、"1.00" は "1" になり見やすくなります
+  if (num < 1000) return Number(num.toFixed(2)).toString();
+
   let exponent = Math.floor(Math.log10(num));
   let mantissa = num / Math.pow(10, exponent);
   return mantissa.toFixed(2) + "e" + exponent;
@@ -50,14 +54,11 @@ function getCost(gen) {
   return gen.baseCost * Math.pow(gen.costMult, gen.bought);
 }
 
-// 変更点：倍率を1.2倍に変更
 function getGlobalMultiplier() {
   return Math.pow(1.2, game.prestigeCount);
 }
 
-// 追加：次のライナックに必要なMk.8の数を計算
-// 初期(0回目) = 1個
-// 1回目以降 = 1 + (回数 * 10) 個
+// 次のライナックに必要なMk.8の数
 function getPrestigeReq() {
   return 1 + (game.prestigeCount * 10);
 }
@@ -67,7 +68,6 @@ function gameLoop() {
   const now = Date.now();
   let dt = (now - game.lastTick) / 1000;
   
-  // スリープ復帰等の長時間経過はループ内では無視（1秒以上はカット）
   if (dt > 1) dt = 1; 
   
   game.lastTick = now;
@@ -89,13 +89,11 @@ function gameLoop() {
   // UI更新
   updateUI(pps);
   
-  // サイドバーが開いている時だけ統計更新
   const wrapper = document.getElementById('app-wrapper');
   if (!wrapper.classList.contains('closed')) {
     updateStats();
   }
   
-  // オートセーブ (10秒ごと)
   if (now % 10000 < 20) saveGame(true);
 
   requestAnimationFrame(gameLoop);
@@ -111,12 +109,10 @@ function simulateOfflineProgress(seconds) {
   const globalMult = getGlobalMultiplier();
 
   for (let t = 0; t < totalTicks; t++) {
-    // 粒子生産
     const pps = game.generators[0].amount * game.generators[0].production * globalMult;
     game.particles += pps * dt;
     game.totalParticles += pps * dt;
 
-    // カスケード生産
     for (let i = 1; i < game.generators.length; i++) {
       const producer = game.generators[i];
       const target = game.generators[i - 1];
@@ -174,7 +170,6 @@ function buyMaxGenerator(index) {
 
 // プレステージ (リセット)
 function doPrestige() {
-  // 条件チェック
   const req = getPrestigeReq();
   if (game.generators[7].amount < req) return;
 
@@ -200,7 +195,7 @@ function updateUI(pps) {
 
   const globalMult = getGlobalMultiplier();
 
-  // 変更点：プレステージバナー表示制御 (動的必要数)
+  // プレステージバナー
   const prestigeContainer = document.getElementById('prestige-container');
   const mk8 = game.generators[7];
   const req = getPrestigeReq();
@@ -208,11 +203,9 @@ function updateUI(pps) {
   if (mk8.amount >= req) {
     prestigeContainer.style.display = 'block';
     
-    // バナー内のテキスト更新（HTML構造に依存して書き換え）
     const infoSpan = document.getElementById('current-mult-display');
     infoSpan.textContent = `x${format(globalMult)} → x${format(globalMult * 1.2)}`;
     
-    // ボタンのテキストも更新して条件を明示
     const btn = prestigeContainer.querySelector('.prestige-btn');
     btn.innerHTML = `<strong>ライナックを実行</strong><br>全生産量 1.2倍 & 最初から再開<br><small>(消費: Mk.8 - ${req}個)</small>`;
     
@@ -220,7 +213,7 @@ function updateUI(pps) {
     prestigeContainer.style.display = 'none';
   }
 
-  // ジェネレーターリスト更新
+  // ジェネレーターリスト
   game.generators.forEach((gen, index) => {
     const btn = document.getElementById(`btn-${index}`);
     const btnMax = document.getElementById(`btn-max-${index}`);
@@ -340,3 +333,11 @@ function init() {
 }
 
 init();
+
+
+
+
+
+Evaluate
+
+Compare
