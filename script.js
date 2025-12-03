@@ -333,11 +333,3 @@ function init() {
 }
 
 init();
-
-
-
-
-
-Evaluate
-
-Compare
