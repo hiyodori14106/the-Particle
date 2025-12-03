@@ -1,100 +1,130 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>the-Particle</title>
- <!-- アイコン画像がない場合は無視されます -->
- <link rel="icon" type="image/png" href="title.png">
- <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>the-Particle</title>
+  <link rel="icon" type="image/png" href="title.png">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
- <div class="app-wrapper" id="app-wrapper">
-  <!-- メインパネル -->
-  <main class="game-panel">
-   <header>
-    <h1>the-Particle</h1>
-    <div class="currency-container">
-     <h2 id="particle-display">0 粒子</h2>
-     <p id="pps-display">(+0.00 /秒)</p>
-    </div>
-   </header>
+  <div class="app-wrapper" id="app-wrapper">
+    <!-- メインパネル -->
+    <main class="game-panel">
+      <header>
+        <h1>the-Particle</h1>
+        <div class="currency-container">
+          <h2 id="particle-display">0 粒子</h2>
+          <p id="pps-display">(+0.00 /秒)</p>
+        </div>
+      </header>
 
-   <!-- 次元リセット（プレステージ）バナー -->
-   <!-- JSロジックに合わせてテキストを「1.2倍」に修正済みです -->
-   <div id="prestige-container" class="prestige-banner" style="display: none;">
-    <div class="prestige-info">
-     生産倍率: <span id="current-mult-display">x1</span>
-    </div>
-    <button class="prestige-btn" onclick="doPrestige()">
-     <strong>ライナックを実行</strong><br>
-     全生産量 1.2倍 & 最初から再開
-    </button>
-   </div>
+      <!-- 次元リセット（プレステージ）バナー -->
+      <div id="prestige-container" class="prestige-banner" style="display: none;">
+        <div class="prestige-info">
+          生産倍率: <span id="current-mult-display">x1</span>
+        </div>
+        <button class="prestige-btn" onclick="doPrestige()">
+          <strong>ライナックを実行</strong><br>
+          全生産量 1.2倍 & 最初から再開
+        </button>
+      </div>
 
-   <!-- 加速器リスト -->
-   <div id="generator-container">
-    <!-- JSでここにリストが生成されます -->
-   </div>
+      <!-- コントロールバー (購入数切り替え) -->
+      <div class="control-bar">
+        <span class="control-label">購入数:</span>
+        <div class="toggle-group">
+          <button class="toggle-btn active" onclick="setBuyAmount(1)" id="buy-1">x1</button>
+          <button class="toggle-btn" onclick="setBuyAmount(10)" id="buy-10">x10</button>
+          <button class="toggle-btn" onclick="setBuyAmount(100)" id="buy-100">x100</button>
+        </div>
+      </div>
 
-   <!-- サイドバーを開くボタン -->
-   <button id="sidebar-open-btn" class="float-menu-btn" onclick="toggleSidebar()">
-    ⚙ メニュー
-   </button>
-  </main>
+      <!-- 加速器リスト -->
+      <div id="generator-container">
+        <!-- JSでリスト生成 -->
+      </div>
 
-  <!-- サイドバー -->
-  <aside id="sidebar" class="sidebar">
-   <div class="sidebar-header">
-    <div class="tab-container">
-     <button class="tab-btn active" onclick="switchTab('stats', this)">統計</button>
-     <button class="tab-btn" onclick="switchTab('settings', this)">設定</button>
-    </div>
-    <button class="close-btn" onclick="toggleSidebar()">✕</button>
-   </div>
+      <!-- サイドバーを開くボタン -->
+      <button id="sidebar-open-btn" class="float-menu-btn" onclick="toggleSidebar()">
+        ⚙ メニュー
+      </button>
+    </main>
 
-   <div class="sidebar-body">
-    <!-- 統計タブ -->
-    <div id="tab-stats" class="sidebar-content active">
-     <h3>STATISTICS</h3>
-     <div class="stat-row">
-      <span class="stat-label">プレイ時間</span>
-      <span id="stat-time" class="stat-val">00:00:00</span>
-     </div>
-     <div class="stat-row">
-      <span class="stat-label">総生産量</span>
-      <span id="stat-total" class="stat-val">0 粒子</span>
-     </div>
-     <div class="stat-row">
-      <span class="stat-label">ライナック回数</span>
-      <span id="stat-prestige" class="stat-val">0 回</span>
-     </div>
-    </div>
+    <!-- サイドバー -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="tab-container">
+          <button class="tab-btn active" onclick="switchTab('stats', this)">統計</button>
+          <button class="tab-btn" onclick="switchTab('settings', this)">設定</button>
+        </div>
+        <button class="close-btn" onclick="toggleSidebar()">✕</button>
+      </div>
 
-    <!-- 設定タブ -->
-    <div id="tab-settings" class="sidebar-content">
-     <h3>SYSTEM</h3>
-     <div class="setting-group">
-      <button class="ui-btn primary" onclick="saveGame()">データをセーブ</button>
-      <div class="status-text" id="save-status">オートセーブ有効 (10秒毎)</div>
-     </div>
-      
-     <div class="setting-group danger-zone">
-      <h4>DANGER ZONE</h4>
-      <p>データを完全に削除してリセットします。</p>
-      <button class="ui-btn danger" onclick="hardReset()">HARD RESET</button>
-     </div>
-    </div>
-   </div>
+      <div class="sidebar-body">
+        <!-- 統計タブ -->
+        <div id="tab-stats" class="sidebar-content active">
+          <h3>STATISTICS (通算)</h3>
+          <div class="stat-row">
+            <span class="stat-label">総プレイ時間</span>
+            <span id="stat-time" class="stat-val">00:00:00</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">総生産量</span>
+            <span id="stat-total" class="stat-val">0 粒子</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">ライナック回数</span>
+            <span id="stat-prestige" class="stat-val">0 回</span>
+          </div>
+        </div>
 
-   <div class="sidebar-footer">
-    ver 1.0.0 Complete Edition
-   </div>
-  </aside>
- </div>
+        <!-- 設定タブ -->
+        <div id="tab-settings" class="sidebar-content">
+          <h3>DISPLAY</h3>
+          <div class="setting-group">
+            <label class="setting-label">数値表記</label>
+            <div class="select-wrapper">
+              <select id="notation-select" onchange="changeNotation(this.value)">
+                <option value="sci">科学的 (1.23e15)</option>
+                <option value="eng">単位 (1.23 Qa)</option>
+                <option value="jp">日本語 (1234 兆)</option>
+              </select>
+            </div>
+          </div>
 
- <script src="script.js"></script>
+          <h3>DATA MANAGEMENT</h3>
+          <div class="setting-group">
+            <button class="ui-btn primary" onclick="saveGame()">データをセーブ</button>
+            <div class="status-text" id="save-status">オートセーブ有効 (10秒毎)</div>
+          </div>
+
+          <div class="setting-group">
+            <button class="ui-btn secondary" onclick="exportSave()">セーブデータを書き出し</button>
+            <button class="ui-btn secondary" onclick="importSave()">セーブデータを読み込み</button>
+          </div>
+          
+          <!-- インポート/エクスポート用テキストエリア（非表示切り替え） -->
+          <div id="io-area" style="display:none; margin-top:10px;">
+            <p style="font-size:0.8rem; color:#888; margin-bottom:5px;" id="io-label">データ:</p>
+            <textarea id="save-textarea" rows="4" style="width:100%; background:#222; color:#fff; border:1px solid #444; font-family:monospace; font-size:0.8rem;"></textarea>
+            <button class="ui-btn primary" id="io-action-btn" style="margin-top:5px;" onclick="confirmImport()">読み込む</button>
+          </div>
+
+          <div class="setting-group danger-zone">
+            <h4>DANGER ZONE</h4>
+            <p>データを完全に削除してリセットします。</p>
+            <button class="ui-btn danger" onclick="hardReset()">HARD RESET</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        ver 1.1.0 Complete Edition
+      </div>
+    </aside>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
-
-
