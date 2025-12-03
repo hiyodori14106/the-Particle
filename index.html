@@ -3,11 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>the-Particle</title>
+  <title>the-Particle: Infinity</title>
   <link rel="icon" type="image/png" href="title.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- グリッチ・ノイズ演出用レイヤー -->
+  <div id="glitch-layer" class="glitch-overlay"></div>
+  
+  <!-- ビッグ・クランチ演出用レイヤー -->
+  <div id="crunch-overlay" class="crunch-overlay" style="display: none;">
+    <div class="crunch-message">
+      <h1>UNIVERSE COLLAPSED</h1>
+      <p>宇宙は粒子の重みに耐えきれませんでした</p>
+    </div>
+  </div>
+
   <div class="app-wrapper" id="app-wrapper">
     <!-- メインパネル -->
     <main class="game-panel">
@@ -16,6 +27,10 @@
         <div class="currency-container">
           <h2 id="particle-display">0 粒子</h2>
           <p id="pps-display">(+0.00 /秒)</p>
+        </div>
+        <!-- Infinity Point 表示（獲得後のみ表示） -->
+        <div id="ip-display-container" style="display:none; color: #b388ff; font-weight:bold; margin-top:5px;">
+          Infinity Points: <span id="ip-val">0</span>
         </div>
       </header>
 
@@ -30,7 +45,7 @@
         </button>
       </div>
 
-      <!-- コントロールバー (購入数切り替え) -->
+      <!-- コントロールバー -->
       <div class="control-bar">
         <span class="control-label">購入数:</span>
         <div class="toggle-group">
@@ -45,7 +60,6 @@
         <!-- JSでリスト生成 -->
       </div>
 
-      <!-- サイドバーを開くボタン -->
       <button id="sidebar-open-btn" class="float-menu-btn" onclick="toggleSidebar()">
         ⚙ メニュー
       </button>
@@ -64,18 +78,31 @@
       <div class="sidebar-body">
         <!-- 統計タブ -->
         <div id="tab-stats" class="sidebar-content active">
-          <h3>STATISTICS (通算)</h3>
+          <h3>STATISTICS (現在の宇宙)</h3>
           <div class="stat-row">
-            <span class="stat-label">総プレイ時間</span>
+            <span class="stat-label">経過時間</span>
             <span id="stat-time" class="stat-val">00:00:00</span>
           </div>
           <div class="stat-row">
             <span class="stat-label">総生産量</span>
             <span id="stat-total" class="stat-val">0 粒子</span>
           </div>
-          <div class="stat-row">
+          <!-- 条件付き表示項目 -->
+          <div class="stat-row" id="row-prestige" style="display:none;">
             <span class="stat-label">ライナック回数</span>
             <span id="stat-prestige" class="stat-val">0 回</span>
+          </div>
+          
+          <div id="infinity-stats" style="display:none; margin-top: 20px; border-top: 1px dashed #555; padding-top:10px;">
+            <h3 style="color:#b388ff;">COSMIC STATS</h3>
+            <div class="stat-row">
+              <span class="stat-label">Big Crunch 回数</span>
+              <span id="stat-crunch" class="stat-val">0 回</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Infinity到達(最短)</span>
+              <span id="stat-best-inf" class="stat-val">--:--:--</span>
+            </div>
           </div>
         </div>
 
@@ -98,13 +125,11 @@
             <button class="ui-btn primary" onclick="saveGame()">データをセーブ</button>
             <div class="status-text" id="save-status">オートセーブ有効 (10秒毎)</div>
           </div>
-
           <div class="setting-group">
             <button class="ui-btn secondary" onclick="exportSave()">セーブデータを書き出し</button>
             <button class="ui-btn secondary" onclick="importSave()">セーブデータを読み込み</button>
           </div>
           
-          <!-- インポート/エクスポート用テキストエリア（非表示切り替え） -->
           <div id="io-area" style="display:none; margin-top:10px;">
             <p style="font-size:0.8rem; color:#888; margin-bottom:5px;" id="io-label">データ:</p>
             <textarea id="save-textarea" rows="4" style="width:100%; background:#222; color:#fff; border:1px solid #444; font-family:monospace; font-size:0.8rem;"></textarea>
@@ -113,14 +138,14 @@
 
           <div class="setting-group danger-zone">
             <h4>DANGER ZONE</h4>
-            <p>データを完全に削除してリセットします。</p>
-            <button class="ui-btn danger" onclick="hardReset()">HARD RESET</button>
+            <p>全ての進捗とIPを完全に削除します。</p>
+            <button class="ui-btn danger" onclick="hardReset()">COMPLETE WIPE</button>
           </div>
         </div>
       </div>
 
       <div class="sidebar-footer">
-        ver 1.1.0 Complete Edition
+        ver 2.0.0 Infinity Update
       </div>
     </aside>
   </div>
