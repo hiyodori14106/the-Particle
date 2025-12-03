@@ -1,92 +1,125 @@
 :root {
- --bg-color: #0f0f0f;
- --panel-bg: #161616;
- --sidebar-bg: #1a1a1a;
- --accent-color: #00e676;
- --accent-hover: #69f0ae;
- --text-main: #ffffff;
- --text-sub: #a0a0a0;
- --border-color: #333;
- --danger-color: #ff4444;
- --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace; /* フォント指定を強化 */
+  --bg-color: #0f0f0f;
+  --panel-bg: #161616;
+  --sidebar-bg: #1a1a1a;
+  --accent-color: #00e676;
+  --accent-hover: #69f0ae;
+  --text-main: #ffffff;
+  --text-sub: #a0a0a0;
+  --border-color: #333;
+  --danger-color: #ff4444;
+  --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
 }
 
 * { box-sizing: border-box; }
 
 body {
- background-color: var(--bg-color);
- color: var(--text-main);
- font-family: var(--font-mono);
- margin: 0;
- height: 100vh;
- overflow: hidden;
-
- /* ★ここが追加！数字の幅を一定にしてガタつきをなくす設定 */
- font-feature-settings: "tnum";
- font-variant-numeric: tabular-nums;
- -webkit-font-feature-settings: "tnum";
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  -webkit-font-feature-settings: "tnum";
 }
 
 /* レイアウト */
 .app-wrapper {
- display: flex;
- width: 100%;
- height: 100%;
- position: relative;
- transition: 0.3s ease;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: 0.3s ease;
 }
 
 .game-panel {
- flex: 1;
- display: flex;
- flex-direction: column;
- padding: 20px;
- position: relative;
- z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
 }
 
 header {
- text-align: center;
- margin-bottom: 20px;
- border-bottom: 1px solid var(--border-color);
- padding-bottom: 10px;
+  text-align: center;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
 }
 
 h1 { margin: 0; font-size: 1.5rem; letter-spacing: 4px; opacity: 0.5; }
 
 .currency-container h2 {
- font-size: 2.5rem;
- margin: 10px 0;
- text-shadow: 0 0 15px rgba(0, 230, 118, 0.3);
- /* タイトル数字も等幅強制 */
- font-variant-numeric: tabular-nums; 
- letter-spacing: 1px; /* 少し間隔をあけて見やすく */
+  font-size: 2.5rem;
+  margin: 10px 0;
+  text-shadow: 0 0 15px rgba(0, 230, 118, 0.3);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
 }
 #pps-display { color: var(--text-sub); margin: 0; font-size: 0.9rem; }
 
+/* コントロールバー (購入数切り替え) */
+.control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+  padding: 0 5px;
+}
+.control-label {
+  font-size: 0.8rem;
+  color: var(--text-sub);
+  margin-right: 10px;
+}
+.toggle-group {
+  display: flex;
+  background: #222;
+  border-radius: 4px;
+  padding: 2px;
+}
+.toggle-btn {
+  background: transparent;
+  border: none;
+  color: #666;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: 0.2s;
+}
+.toggle-btn:hover { color: #fff; }
+.toggle-btn.active {
+  background: var(--accent-color);
+  color: #000;
+  font-weight: bold;
+}
+
 /* リストエリア */
 #generator-container {
- flex: 1;
- overflow-y: auto;
- padding-right: 5px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 5px;
 }
 #generator-container::-webkit-scrollbar { width: 6px; }
 #generator-container::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
 /* 加速器の行デザイン */
 .generator-row {
- background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
- border-left: 3px solid var(--border-color);
- margin-bottom: 8px;
- padding: 10px 15px;
- display: flex;
- justify-content: space-between;
- align-items: center;
- transition: 0.2s;
+  background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+  border-left: 3px solid var(--border-color);
+  margin-bottom: 8px;
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: 0.2s;
 }
 .generator-row:hover {
- background: rgba(255,255,255,0.06);
- border-left-color: var(--accent-color);
+  background: rgba(255,255,255,0.06);
+  border-left-color: var(--accent-color);
 }
 
 .gen-info { flex-grow: 1; }
@@ -96,124 +129,124 @@ h1 { margin: 0; font-size: 1.5rem; letter-spacing: 4px; opacity: 0.5; }
 
 /* ボタン群 */
 .btn-group {
- display: flex;
- flex-direction: column;
- gap: 5px;
- min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 140px;
 }
 
 button { font-family: var(--font-mono); outline: none; cursor: pointer; user-select: none; }
 
 .buy-btn {
- background-color: transparent;
- border: 1px solid var(--accent-color);
- color: var(--accent-color);
- padding: 5px 10px;
- border-radius: 2px;
- text-align: center;
- font-weight: bold;
- transition: all 0.1s;
- font-size: 0.8rem;
+  background-color: transparent;
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+  padding: 5px 10px;
+  border-radius: 2px;
+  text-align: center;
+  font-weight: bold;
+  transition: all 0.1s;
+  font-size: 0.8rem;
 }
 .buy-btn:hover {
- background-color: var(--accent-color);
- color: #000;
- box-shadow: 0 0 8px var(--accent-color);
+  background-color: var(--accent-color);
+  color: #000;
+  box-shadow: 0 0 8px var(--accent-color);
 }
 .buy-btn:active { transform: translateY(1px); }
 
-/* Buy Max ボタンのスタイル */
+/* Buy Max ボタン */
 .buy-btn.max {
- border-color: #29b6f6;
- color: #29b6f6;
+  border-color: #29b6f6;
+  color: #29b6f6;
 }
 .buy-btn.max:hover {
- background-color: #29b6f6;
- color: #000;
- box-shadow: 0 0 8px #29b6f6;
+  background-color: #29b6f6;
+  color: #000;
+  box-shadow: 0 0 8px #29b6f6;
 }
 
 /* 無効化状態 */
 .buy-btn.disabled {
- border-color: #444;
- color: #555;
- background-color: transparent;
- cursor: default;
- box-shadow: none;
- pointer-events: none;
+  border-color: #444;
+  color: #555;
+  background-color: transparent;
+  cursor: default;
+  box-shadow: none;
+  pointer-events: none;
 }
 
 /* プレステージエリア */
 .prestige-banner {
- margin-bottom: 15px;
- padding: 10px;
- background: linear-gradient(45deg, #2c2c00, #443300);
- border: 1px solid #ffd700;
- border-radius: 4px;
- text-align: center;
- animation: pulseBorder 3s infinite;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: linear-gradient(45deg, #2c2c00, #443300);
+  border: 1px solid #ffd700;
+  border-radius: 4px;
+  text-align: center;
+  animation: pulseBorder 3s infinite;
 }
 @keyframes pulseBorder {
- 0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.2); }
- 50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
- 100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.2); }
+  0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.2); }
+  50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
+  100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.2); }
 }
 
 .prestige-info {
- color: #ffd700;
- font-size: 0.85rem;
- margin-bottom: 8px;
- font-weight: bold;
+  color: #ffd700;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  font-weight: bold;
 }
 .prestige-btn {
- background: linear-gradient(to bottom, #ffd700, #ffa000);
- color: #000;
- border: none;
- padding: 8px 20px;
- font-size: 0.9rem;
- font-weight: bold;
- border-radius: 3px;
- width: 100%;
- cursor: pointer;
+  background: linear-gradient(to bottom, #ffd700, #ffa000);
+  color: #000;
+  border: none;
+  padding: 8px 20px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  border-radius: 3px;
+  width: 100%;
+  cursor: pointer;
 }
 .prestige-btn:hover { filter: brightness(1.1); }
 
 /* サイドバー */
 .sidebar {
- width: 300px;
- background-color: var(--sidebar-bg);
- border-left: 1px solid var(--border-color);
- display: flex;
- flex-direction: column;
- transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
- z-index: 10;
- flex-shrink: 0;
+  width: 320px; /* 少し広げた */
+  background-color: var(--sidebar-bg);
+  border-left: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  flex-shrink: 0;
 }
-.app-wrapper.closed .sidebar { margin-right: -300px; }
+.app-wrapper.closed .sidebar { margin-right: -320px; }
 
 .sidebar-header {
- display: flex;
- height: 45px;
- background: #111;
- border-bottom: 1px solid var(--border-color);
+  display: flex;
+  height: 45px;
+  background: #111;
+  border-bottom: 1px solid var(--border-color);
 }
 .tab-container { flex: 1; display: flex; }
 .tab-btn {
- flex: 1;
- background: transparent;
- border: none;
- border-bottom: 2px solid transparent;
- color: var(--text-sub);
- font-weight: bold;
- font-size: 0.9rem;
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-sub);
+  font-weight: bold;
+  font-size: 0.9rem;
 }
 .tab-btn.active { color: var(--accent-color); border-bottom-color: var(--accent-color); }
 .close-btn {
- width: 45px;
- background: transparent;
- border: none;
- color: #666;
- border-left: 1px solid #222;
+  width: 45px;
+  background: transparent;
+  border: none;
+  color: #666;
+  border-left: 1px solid #222;
 }
 .close-btn:hover { background: #333; color: #fff; }
 
@@ -223,18 +256,18 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
 .sidebar h3 {
- margin-top: 0;
- font-size: 0.8rem;
- color: var(--text-sub);
- border-bottom: 1px solid #333;
- padding-bottom: 5px;
- margin-bottom: 15px;
+  margin-top: 0;
+  font-size: 0.8rem;
+  color: var(--text-sub);
+  border-bottom: 1px solid #333;
+  padding-bottom: 5px;
+  margin-bottom: 15px;
 }
 
 .stat-row {
- display: flex; justify-content: space-between;
- margin-bottom: 10px; padding: 8px;
- background: rgba(255,255,255,0.03); border-radius: 3px;
+  display: flex; justify-content: space-between;
+  margin-bottom: 10px; padding: 8px;
+  background: rgba(255,255,255,0.03); border-radius: 3px;
 }
 .stat-label { color: #888; font-size: 0.8rem; }
 .stat-val { color: #fff; font-weight: bold; font-size: 0.9rem; }
@@ -242,8 +275,20 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
 .ui-btn { width: 100%; padding: 10px; border: none; border-radius: 3px; font-weight: bold; margin-bottom: 10px; }
 .ui-btn.primary { background: #333; color: #fff; border: 1px solid #555; }
 .ui-btn.primary:hover { background: #444; border-color: #777; }
+.ui-btn.secondary { background: #222; color: #ccc; border: 1px solid #444; }
+.ui-btn.secondary:hover { background: #333; color: #fff; }
 .ui-btn.danger { background: var(--danger-color); color: white; }
 .ui-btn.danger:hover { background: #d32f2f; }
+
+.select-wrapper { margin-bottom: 15px; }
+.select-wrapper select {
+  width: 100%;
+  padding: 8px;
+  background: #222;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 3px;
+}
 
 .danger-zone { margin-top: 30px; border: 1px solid var(--danger-color); padding: 10px; background: rgba(255,68,68,0.05); }
 .danger-zone h4 { color: var(--danger-color); margin: 0 0 5px 0; font-size: 0.9rem; }
@@ -253,11 +298,11 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
 .sidebar-footer { text-align: center; padding: 10px; color: #444; font-size: 0.7rem; border-top: 1px solid #222; }
 
 .float-menu-btn {
- position: absolute; top: 15px; right: 15px;
- background: #222; color: #fff;
- border: 1px solid #444; padding: 8px 15px;
- border-radius: 20px; font-weight: bold; z-index: 100;
- display: none;
+  position: absolute; top: 15px; right: 15px;
+  background: #222; color: #fff;
+  border: 1px solid #444; padding: 8px 15px;
+  border-radius: 20px; font-weight: bold; z-index: 100;
+  display: none;
 }
 .float-menu-btn:hover { background: #333; }
 .app-wrapper.closed .float-menu-btn { display: block; }
