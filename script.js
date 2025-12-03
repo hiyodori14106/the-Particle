@@ -127,11 +127,11 @@ function simulateOfflineProgress(seconds) {
         // 描画を待ってからアラート
         setTimeout(() => {
             alert(
-                `=== 次元シミュレーション完了 ===\n\n` +
+                `=== 演算処理終了 ===\n\n` +
                 `経過時間: ${formatTime(seconds)}\n` +
                 `演算ステップ: ${totalTicks} ticks\n` +
                 `獲得粒子: ${format(gained)}\n\n` +
-                `あなたの宇宙は加速し続けていました。`
+                ``
             );
         }, 100);
     }
