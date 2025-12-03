@@ -1,100 +1,93 @@
 /**
- * the-Particle Complete Edition v1.1
- * - Prestige Req: 1 + 10*n Mk.8
- * - Prestige Mult: 1.2x
- * - Added: Buy 1/10/100 toggle
- * - Added: Notation settings (Sci/Eng/Jp)
- * - Added: Persistent Stats & Import/Export
+ * the-Particle Infinity Update v2.0
+ * - Big Crunch at 1.79e308
+ * - Autobuyers at 1e50, 1e60...
+ * - Glitch effects near Infinity
  */
 
-const SAVE_KEY = 'theParticleComplete_v2_stable';
+const SAVE_KEY = 'theParticle_Infinity_v2';
+const INFINITY_LIMIT = 1.79e308;
 
-// --- 定数：単位定義 ---
+// 単位定義
 const UNITS_ENG = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
-// 1万, 1億, 1兆, 1京, 1垓... (4桁区切り)
 const UNITS_JP = ['', '万', '億', '兆', '京', '垓', '𥝱', '穣', '溝', '澗', '正', '載', '極'];
 
 // --- ゲームデータ定義 ---
 function getInitialState() {
   return {
-    // 通貨 (リセット対象)
     particles: 10,
     
-    // 統計 (リセットしないもの)
+    // 現在の宇宙の統計 (Prestigeでリセットされないが、Crunchでリセットされる)
     stats: {
-      totalParticles: 10, // 通算生産量
-      prestigeCount: 0,   // ライナック回数
-      startTime: Date.now(), // 初回プレイ開始時刻
+      totalParticles: 10,
+      prestigeCount: 0,
+      startTime: Date.now(),
     },
     
-    // 設定
-    settings: {
-      notation: 'sci', // 'sci', 'eng', 'jp'
-      buyAmount: 1     // 1, 10, 100
+    // メタ統計 (Crunchでもリセットされない)
+    infinity: {
+      ip: 0,          // Infinity Points
+      crunchCount: 0, // 回数
+      bestTime: null  // 最速到達時間(ms)
     },
 
-    // システム (リセット対象だが、stats更新に使う)
-    lastTick: Date.now(),
+    settings: {
+      notation: 'sci',
+      buyAmount: 1
+    },
 
-    // 施設 (リセット対象)
+    lastTick: Date.now(),
+    autobuyerTimer: 0, // オートバイヤー用タイマー
+
     generators: [
-      { id: 0, name: "Accelerator Mk.1", baseCost: 10,    costMult: 1.5,  amount: 0, bought: 0, production: 1 },
-      { id: 1, name: "Accelerator Mk.2", baseCost: 100,   costMult: 1.8,  amount: 0, bought: 0, production: 1 },
-      { id: 2, name: "Accelerator Mk.3", baseCost: 1e3,   costMult: 2.2,  amount: 0, bought: 0, production: 1 },
-      { id: 3, name: "Accelerator Mk.4", baseCost: 1e4,   costMult: 3.0,  amount: 0, bought: 0, production: 1 },
-      { id: 4, name: "Accelerator Mk.5", baseCost: 1e6,   costMult: 4.0,  amount: 0, bought: 0, production: 1 },
-      { id: 5, name: "Accelerator Mk.6", baseCost: 1e8,   costMult: 6.0,  amount: 0, bought: 0, production: 1 },
-      { id: 6, name: "Accelerator Mk.7", baseCost: 1e10,  costMult: 10.0, amount: 0, bought: 0, production: 1 },
-      { id: 7, name: "Accelerator Mk.8", baseCost: 1e12,  costMult: 15.0, amount: 0, bought: 0, production: 1 }
+      { id: 0, name: "Accelerator Mk.1", baseCost: 10,   costMult: 1.5, amount: 0, bought: 0, production: 1 },
+      { id: 1, name: "Accelerator Mk.2", baseCost: 100,  costMult: 1.8, amount: 0, bought: 0, production: 1 },
+      { id: 2, name: "Accelerator Mk.3", baseCost: 1e3,  costMult: 2.2, amount: 0, bought: 0, production: 1 },
+      { id: 3, name: "Accelerator Mk.4", baseCost: 1e4,  costMult: 3.0, amount: 0, bought: 0, production: 1 },
+      { id: 4, name: "Accelerator Mk.5", baseCost: 1e6,  costMult: 4.0, amount: 0, bought: 0, production: 1 },
+      { id: 5, name: "Accelerator Mk.6", baseCost: 1e8,  costMult: 6.0, amount: 0, bought: 0, production: 1 },
+      { id: 6, name: "Accelerator Mk.7", baseCost: 1e10, costMult: 10.0, amount: 0, bought: 0, production: 1 },
+      { id: 7, name: "Accelerator Mk.8", baseCost: 1e12, costMult: 15.0, amount: 0, bought: 0, production: 1 }
     ]
   };
 }
 
 let game = getInitialState();
+let isCrunching = false; // 演出中フラグ
 
-// --- ユーティリティ: 数値整形 ---
+// --- ユーティリティ ---
 function format(num) {
+  if (!isFinite(num)) return "Infinity";
   if (num < 1000) return num.toFixed(2);
-
+  
   const type = game.settings.notation;
-
-  // 科学的表記 (Scientific)
-  if (type === 'sci') {
-    let exponent = Math.floor(Math.log10(num));
-    let mantissa = num / Math.pow(10, exponent);
-    return mantissa.toFixed(2) + "e" + exponent;
-  }
-
-  // 英語単位 (k, M, B, T...) - 3桁区切り
+  if (type === 'sci') return formatScientific(num);
   if (type === 'eng') {
     let exponent = Math.floor(Math.log10(num));
     let unitIndex = Math.floor(exponent / 3);
-    if (unitIndex >= UNITS_ENG.length) return formatScientific(num); // フォールバック
+    if (unitIndex >= UNITS_ENG.length) return formatScientific(num);
     let mantissa = num / Math.pow(1000, unitIndex);
     return mantissa.toFixed(2) + " " + UNITS_ENG[unitIndex];
   }
-
-  // 日本語単位 (万, 億, 兆...) - 4桁区切り
   if (type === 'jp') {
-    // 10000未満はそのまま表示されるよう調整済み (冒頭のif)
     let exponent = Math.floor(Math.log10(num));
     let unitIndex = Math.floor(exponent / 4);
     if (unitIndex >= UNITS_JP.length) return formatScientific(num);
     let mantissa = num / Math.pow(10000, unitIndex);
     return mantissa.toFixed(2) + " " + UNITS_JP[unitIndex];
   }
-  
-  return num.toFixed(2);
+  return formatScientific(num);
 }
 
 function formatScientific(num) {
+  if (!isFinite(num)) return "Infinity";
   let exponent = Math.floor(Math.log10(num));
   let mantissa = num / Math.pow(10, exponent);
   return mantissa.toFixed(2) + "e" + exponent;
 }
 
 function formatTime(seconds) {
-  if (seconds < 0) seconds = 0;
+  if (seconds === null || seconds === undefined) return "--:--:--";
   const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
   const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
   const s = Math.floor(seconds % 60).toString().padStart(2, '0');
@@ -103,8 +96,7 @@ function formatTime(seconds) {
 
 // --- コアロジック ---
 
-// n個購入するためのコスト計算 (等比数列の和)
-// Cost = Base * r^Current * (r^n - 1) / (r - 1)
+// コスト計算
 function getBulkCost(gen, count) {
   const r = gen.costMult;
   const currentCost = gen.baseCost * Math.pow(r, gen.bought);
@@ -126,24 +118,42 @@ function getPrestigeReq() {
 
 // --- ゲームループ ---
 function gameLoop() {
+  if (isCrunching) return; // 崩壊演出中は停止
+
   const now = Date.now();
   let dt = (now - game.lastTick) / 1000;
   if (dt > 1) dt = 1; 
-  
   game.lastTick = now;
+
+  // ビッグ・クランチ判定 (Infinity到達)
+  if (game.particles >= INFINITY_LIMIT || !isFinite(game.particles)) {
+    triggerBigCrunch();
+    return;
+  }
+
+  // グリッチ演出の更新
+  updateGlitchEffect();
+
   const globalMult = getGlobalMultiplier();
 
   // 生産
   const pps = game.generators[0].amount * game.generators[0].production * globalMult;
   const produced = pps * dt;
   game.particles += produced;
-  game.stats.totalParticles += produced; // 永続統計への加算
+  game.stats.totalParticles += produced;
 
-  // カスケード
+  // カスケード生産
   for (let i = 1; i < game.generators.length; i++) {
     const producer = game.generators[i];
     const target = game.generators[i - 1];
     target.amount += producer.amount * producer.production * globalMult * dt;
+  }
+
+  // オートバイヤー処理
+  game.autobuyerTimer = (game.autobuyerTimer || 0) + dt;
+  if (game.autobuyerTimer >= 1.0) {
+    runAutobuyers();
+    game.autobuyerTimer = 0;
   }
 
   updateUI(pps);
@@ -156,67 +166,125 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// --- オフライン進行 ---
-function simulateOfflineProgress(seconds) {
-  if (seconds > 86400 * 7) seconds = 86400 * 7;
+// --- 新機能: オートバイヤー ---
+function runAutobuyers() {
+  // 条件: 1e50 -> Mk.1, 1e60 -> Mk.2, ... 1e120 -> Mk.8
+  game.generators.forEach((gen, index) => {
+    const threshold = Number('1e' + (50 + index * 10));
+    if (game.particles >= threshold) {
+      // オート購入実行 (Buy Maxの簡易版: 安いのでループで10個まで買う)
+      for(let k=0; k<10; k++) {
+        const cost = getCost(gen);
+        if (game.particles >= cost) {
+          game.particles -= cost;
+          gen.amount++;
+          gen.bought++;
+          gen.production *= 1.1;
+        } else {
+          break;
+        }
+      }
+    }
+  });
+}
 
-  const initial = game.particles;
-  const totalTicks = 1000;
-  const dt = seconds / totalTicks;
-  const globalMult = getGlobalMultiplier();
+// --- 新機能: グリッチ演出 ---
+function updateGlitchEffect() {
+  // 1e250あたりから開始、1e308でMAX
+  if (game.particles < 1e250) {
+    document.body.classList.remove('glitched');
+    document.getElementById('glitch-layer').style.opacity = 0;
+    return;
+  }
 
-  for (let t = 0; t < totalTicks; t++) {
-    const pps = game.generators[0].amount * game.generators[0].production * globalMult;
-    const produced = pps * dt;
-    game.particles += produced;
-    game.stats.totalParticles += produced;
-
-    for (let i = 1; i < game.generators.length; i++) {
-      const producer = game.generators[i];
-      const target = game.generators[i - 1];
-      target.amount += producer.amount * producer.production * globalMult * dt;
+  const logP = Math.log10(game.particles);
+  const intensity = (logP - 250) / (308 - 250); // 0.0 ~ 1.0
+  
+  const overlay = document.getElementById('glitch-layer');
+  if (intensity > 0) {
+    document.body.classList.add('glitched');
+    overlay.style.opacity = intensity * 0.8; // 最大0.8の不透明度
+    
+    // たまに文字化けさせる演出（オプション）
+    if (Math.random() < intensity * 0.1) {
+      document.getElementById('particle-display').style.transform = `translate(${Math.random()*4-2}px, ${Math.random()*4-2}px)`;
+    } else {
+      document.getElementById('particle-display').style.transform = 'none';
     }
   }
-
-  const gained = game.particles - initial;
-  if (gained > 0) {
-    setTimeout(() => {
-      alert(`=== 演算処理終了 ===\n\n経過時間: ${formatTime(seconds)}\n獲得粒子: ${format(gained)}`);
-    }, 100);
-  }
 }
+
+// --- 新機能: ビッグ・クランチ ---
+function triggerBigCrunch() {
+  isCrunching = true;
+  
+  // 現在の到達時間
+  const currentTime = Date.now() - game.stats.startTime;
+  
+  // メタデータの更新
+  if (!game.infinity) game.infinity = { ip:0, crunchCount:0, bestTime:null };
+  game.infinity.ip += 1;
+  game.infinity.crunchCount += 1;
+  
+  if (game.infinity.bestTime === null || currentTime < game.infinity.bestTime) {
+    game.infinity.bestTime = currentTime;
+  }
+  
+  saveGame(true); // クラッシュ前に一度IPを保存
+
+  // 演出開始
+  const overlay = document.getElementById('crunch-overlay');
+  overlay.style.display = 'flex';
+  
+  // 4秒後にリセット実行
+  setTimeout(() => {
+    performInfinityReset();
+    overlay.style.display = 'none';
+    isCrunching = false;
+    gameLoop();
+  }, 4000);
+}
+
+function performInfinityReset() {
+  const keptInfinity = JSON.parse(JSON.stringify(game.infinity));
+  const keptSettings = JSON.parse(JSON.stringify(game.settings));
+  
+  // 初期状態に戻す
+  game = getInitialState();
+  
+  // メタデータと設定を復元
+  game.infinity = keptInfinity;
+  game.settings = keptSettings;
+  
+  saveGame();
+  
+  alert(`ビッグ・クランチ完了。\nInfinity Points: ${game.infinity.ip} (+1)`);
+  location.reload(); // 安全のためリロード
+}
+
 
 // --- アクション ---
-
-// 設定変更: 購入数量
 function setBuyAmount(amount) {
   game.settings.buyAmount = amount;
-  
-  // ボタンの見た目更新
   document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
   document.getElementById(`buy-${amount}`).classList.add('active');
-  
-  updateUI(0); // ボタンテキスト更新用
+  updateUI(0);
 }
 
-// 設定変更: 表記
 function changeNotation(val) {
   game.settings.notation = val;
   updateUI(0);
 }
 
-// 購入処理
 function buyGenerator(index) {
   const gen = game.generators[index];
   const amountToBuy = game.settings.buyAmount;
-  
   const cost = getBulkCost(gen, amountToBuy);
-  
   if (game.particles >= cost) {
     game.particles -= cost;
     gen.amount += amountToBuy;
     gen.bought += amountToBuy;
-    gen.production *= Math.pow(1.1, amountToBuy); // 倍率も個数分掛ける
+    gen.production *= Math.pow(1.1, amountToBuy);
     updateUI(0);
   }
 }
@@ -224,15 +292,13 @@ function buyGenerator(index) {
 function buyMaxGenerator(index) {
   const gen = game.generators[index];
   let count = 0;
-  
-  // 簡易的なBuy Max (一度に大量に計算すると重くなる場合があるのでループ制限を設けても良いが、ここでは基本ループ)
-  // 高速化のため、安価なものは一度に計算するロジックを入れるのが理想だが、シンプル実装にする
-  while (true) {
+  // 安全のため最大100回ループ制限
+  for(let i=0; i<100; i++){
     const cost = getCost(gen);
     if (game.particles >= cost) {
       game.particles -= cost;
-      gen.amount += 1;
-      gen.bought += 1;
+      gen.amount++;
+      gen.bought++;
       gen.production *= 1.1;
       count++;
     } else {
@@ -245,22 +311,16 @@ function buyMaxGenerator(index) {
 function doPrestige() {
   const req = getPrestigeReq();
   if (game.generators[7].amount < req) return;
+  const globalMult = getGlobalMultiplier();
+  if (!confirm(`ライナックを実行しますか？\n倍率: x${format(globalMult)} → x${format(globalMult * 1.2)}`)) return;
 
-  const currentMult = format(getGlobalMultiplier());
-  const nextMult = format(getGlobalMultiplier() * 1.2);
-  
-  if (!confirm(`ライナックを実行しますか？\n\n・現在の粒子と加速器は全てリセットされます\n・通算統計は保持されます\n・生産倍率: x${currentMult} → x${nextMult}`)) return;
-
-  // 統計更新
   game.stats.prestigeCount++;
-
-  // リセット処理 (statsとsettingsは維持)
-  const fresh = getInitialState();
-  game.particles = fresh.particles;
-  game.generators = fresh.generators;
+  
+  // プレステージリセット（粒子と加速器のみ）
+  game.particles = 10;
+  game.generators = getInitialState().generators;
   game.lastTick = Date.now();
-  // runStartTime的なものがあればここでリセット
-
+  
   saveGame();
   updateUI(0);
 }
@@ -270,13 +330,18 @@ function updateUI(pps) {
   document.getElementById('particle-display').textContent = `${format(game.particles)} 粒子`;
   document.getElementById('pps-display').textContent = `(+${format(pps)} /秒)`;
 
+  // Infinity Points表示
+  if (game.infinity && game.infinity.ip > 0) {
+    document.getElementById('ip-display-container').style.display = 'block';
+    document.getElementById('ip-val').textContent = game.infinity.ip;
+  }
+
+  // プレステージ表示
   const globalMult = getGlobalMultiplier();
   const req = getPrestigeReq();
-  const mk8 = game.generators[7];
-  
-  // プレステージ表示
   const pContainer = document.getElementById('prestige-container');
-  if (mk8.amount >= req) {
+  
+  if (game.generators[7].amount >= req) {
     pContainer.style.display = 'block';
     document.getElementById('current-mult-display').textContent = `x${format(globalMult)} → x${format(globalMult * 1.2)}`;
     pContainer.querySelector('.prestige-btn').innerHTML = `<strong>ライナックを実行</strong><br>全生産量 1.2倍 & 最初から再開<br><small>(消費: Mk.8 - ${req}個)</small>`;
@@ -293,24 +358,29 @@ function updateUI(pps) {
     const buyAmt = game.settings.buyAmount;
     const cost = getBulkCost(gen, buyAmt);
     
+    // オートバイヤーの状態表示
+    const autoThreshold = Number('1e' + (50 + index * 10));
+    const autoBadge = document.getElementById(`auto-badge-${index}`);
+    if (autoBadge) {
+      if (game.particles >= autoThreshold) {
+        autoBadge.classList.add('active');
+        autoBadge.textContent = "AUTO ON";
+      } else {
+        autoBadge.classList.remove('active');
+        autoBadge.textContent = `AUTO: ${format(autoThreshold)}`;
+      }
+    }
+
     document.getElementById(`amount-${index}`).textContent = `所持: ${format(gen.amount)}`;
     document.getElementById(`mult-${index}`).textContent = `x${format(gen.production * globalMult)}`;
     
-    // ボタンテキスト更新
     btn.textContent = `${buyAmt}個: ${format(cost)}`;
     
-    if (game.particles >= cost) {
-      btn.classList.remove('disabled');
-    } else {
-      btn.classList.add('disabled');
-    }
+    if (game.particles >= cost) btn.classList.remove('disabled');
+    else btn.classList.add('disabled');
     
-    // Maxボタン判定
-    if (game.particles >= getCost(gen)) {
-      btnMax.classList.remove('disabled');
-    } else {
-      btnMax.classList.add('disabled');
-    }
+    if (game.particles >= getCost(gen)) btnMax.classList.remove('disabled');
+    else btnMax.classList.add('disabled');
   });
 }
 
@@ -318,146 +388,35 @@ function updateStats() {
   const elapsed = (Date.now() - game.stats.startTime) / 1000;
   document.getElementById('stat-time').textContent = formatTime(elapsed);
   document.getElementById('stat-total').textContent = format(game.stats.totalParticles);
-  document.getElementById('stat-prestige').textContent = `${game.stats.prestigeCount} 回`;
-}
 
-// --- サイドバーなど ---
-function toggleSidebar() {
-  document.getElementById('app-wrapper').classList.toggle('closed');
-}
+  // 条件付き表示: ライナック回数
+  if (game.stats.prestigeCount > 0 || (game.infinity && game.infinity.crunchCount > 0)) {
+    document.getElementById('row-prestige').style.display = 'flex';
+    document.getElementById('stat-prestige').textContent = `${game.stats.prestigeCount} 回`;
+  }
 
-function switchTab(name, btn) {
-  document.querySelectorAll('.sidebar-content').forEach(c => c.classList.remove('active'));
-  document.getElementById(`tab-${name}`).classList.add('active');
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-// --- セーブ・ロード・インポート/エクスポート ---
-function saveGame(isAuto = false) {
-  game.lastTick = Date.now();
-  localStorage.setItem(SAVE_KEY, JSON.stringify(game));
-  if (!isAuto) {
-    const s = document.getElementById('save-status');
-    s.textContent = "保存しました";
-    setTimeout(() => s.textContent = "オートセーブ有効 (10秒毎)", 2000);
+  // 条件付き表示: Infinity Stats
+  if (game.infinity && game.infinity.crunchCount > 0) {
+    document.getElementById('infinity-stats').style.display = 'block';
+    document.getElementById('stat-crunch').textContent = `${game.infinity.crunchCount} 回`;
+    document.getElementById('stat-best-inf').textContent = formatTime(game.infinity.bestTime / 1000);
   }
 }
 
-function loadGame() {
-  const data = localStorage.getItem(SAVE_KEY);
-  if (data) {
-    try {
-      const parsed = JSON.parse(data);
-      const fresh = getInitialState();
-
-      // 互換性維持のためのマージ
-      // 旧バージョンデータの移行ロジック
-      if (parsed.prestigeCount !== undefined && parsed.stats === undefined) {
-         // 旧データ構造からの移行
-         fresh.stats.prestigeCount = parsed.prestigeCount || 0;
-         fresh.stats.totalParticles = parsed.totalParticles || 0;
-         fresh.stats.startTime = parsed.startTime || Date.now();
-         // 他のプロパティをコピー
-         fresh.particles = parsed.particles;
-         fresh.generators = parsed.generators;
-         game = fresh;
-      } else {
-         // 新データ構造ならそのままマージ
-         game = { ...fresh, ...parsed };
-         // statsオブジェクト内の欠損もケア
-         game.stats = { ...fresh.stats, ...(parsed.stats || {}) };
-         game.settings = { ...fresh.settings, ...(parsed.settings || {}) };
-         if (parsed.generators) {
-           game.generators = parsed.generators.map((g, i) => ({ ...fresh.generators[i], ...g }));
-         }
-      }
-
-      // オフライン進行
-      const now = Date.now();
-      const offlineSeconds = (now - (game.lastTick || now)) / 1000;
-      if (offlineSeconds > 1) simulateOfflineProgress(offlineSeconds);
-      game.lastTick = now;
-
-      // UI初期化
-      document.getElementById('notation-select').value = game.settings.notation;
-      setBuyAmount(game.settings.buyAmount);
-
-    } catch(e) {
-      console.error("Save data corrupted", e);
-    }
-  }
-}
-
-function hardReset() {
-  if(confirm("【警告】\n全データを削除してリセットしますか？")) {
-    localStorage.removeItem(SAVE_KEY);
-    location.reload();
-  }
-}
-
-// エクスポート
-function exportSave() {
-  saveGame(true); // 最新状態にする
-  const str = btoa(JSON.stringify(game)); // Base64エンコード
-  const area = document.getElementById('save-textarea');
-  const ioArea = document.getElementById('io-area');
-  const ioLabel = document.getElementById('io-label');
-  const actionBtn = document.getElementById('io-action-btn');
-  
-  ioArea.style.display = 'block';
-  ioLabel.textContent = "この文字列をコピーして保存してください:";
-  area.value = str;
-  actionBtn.style.display = 'none'; // エクスポート時はボタン不要
-  
-  area.select();
-  document.execCommand('copy');
-  alert("クリップボードにコピーしました");
-}
-
-// インポート準備
-function importSave() {
-  const ioArea = document.getElementById('io-area');
-  const ioLabel = document.getElementById('io-label');
-  const area = document.getElementById('save-textarea');
-  const actionBtn = document.getElementById('io-action-btn');
-
-  ioArea.style.display = 'block';
-  ioLabel.textContent = "セーブデータを貼り付けてください:";
-  area.value = "";
-  actionBtn.style.display = 'block';
-  actionBtn.textContent = "データを読み込む";
-}
-
-// インポート実行
-function confirmImport() {
-  const str = document.getElementById('save-textarea').value.trim();
-  if (!str) return;
-  
-  try {
-    const decoded = atob(str);
-    JSON.parse(decoded); // 有効なJSONかチェック
-    localStorage.setItem(SAVE_KEY, decoded);
-    alert("読み込みに成功しました。リロードします。");
-    location.reload();
-  } catch (e) {
-    alert("データが無効です。\n" + e);
-  }
-}
-
-// --- 初期化 ---
+// --- 初期化・ロード ---
 function init() {
-  // HTML生成
   const container = document.getElementById('generator-container');
   container.innerHTML = '';
   
-  // 一時的にジェネレータリストを使ってHTML枠を作る
   getInitialState().generators.forEach((gen, index) => {
     const row = document.createElement('div');
     row.className = 'generator-row';
     row.innerHTML = `
       <div class="gen-info">
-        <div class="gen-name">${gen.name}</div>
+        <div class="gen-name">
+          ${gen.name} 
+          <span id="auto-badge-${index}" class="auto-badge">AUTO: 1e${50 + index*10}</span>
+        </div>
         <div class="gen-amount" id="amount-${index}">0</div>
         <div class="gen-multiplier" id="mult-${index}">x1.00</div>
       </div>
@@ -477,4 +436,102 @@ function init() {
   gameLoop();
 }
 
+// セーブ/ロード/エクスポート機能（既存ロジックの微調整）
+function saveGame(isAuto = false) {
+  // Crunch中はセーブしない
+  if(isCrunching) return; 
+  game.lastTick = Date.now();
+  localStorage.setItem(SAVE_KEY, JSON.stringify(game));
+  if (!isAuto) {
+    const s = document.getElementById('save-status');
+    s.textContent = "保存しました";
+    setTimeout(() => s.textContent = "オートセーブ有効 (10秒毎)", 2000);
+  }
+}
+
+function loadGame() {
+  const data = localStorage.getItem(SAVE_KEY);
+  if (data) {
+    try {
+      const parsed = JSON.parse(data);
+      const fresh = getInitialState();
+      
+      // データのマージ
+      game = { ...fresh, ...parsed };
+      game.stats = { ...fresh.stats, ...(parsed.stats || {}) };
+      game.infinity = { ...fresh.infinity, ...(parsed.infinity || {}) }; // infinityデータのマージ
+      game.settings = { ...fresh.settings, ...(parsed.settings || {}) };
+      if (parsed.generators) {
+        game.generators = parsed.generators.map((g, i) => ({ ...fresh.generators[i], ...g }));
+      }
+      
+      // UI反映
+      document.getElementById('notation-select').value = game.settings.notation;
+      setBuyAmount(game.settings.buyAmount);
+    } catch(e) {
+      console.error(e);
+    }
+  }
+}
+
+function hardReset() {
+  if(confirm("本当に全てのデータを消去しますか？\nInfinity Pointsも失われます。")) {
+    localStorage.removeItem(SAVE_KEY);
+    location.reload();
+  }
+}
+
+// インポート・エクスポート関数は既存のものをそのまま使用
+function exportSave() {
+  saveGame(true);
+  const str = btoa(JSON.stringify(game));
+  const area = document.getElementById('save-textarea');
+  document.getElementById('io-area').style.display = 'block';
+  document.getElementById('io-label').textContent = "コピーしてください:";
+  area.value = str;
+  document.getElementById('io-action-btn').style.display = 'none';
+  area.select();
+  document.execCommand('copy');
+  alert("コピーしました");
+}
+
+function importSave() {
+  document.getElementById('io-area').style.display = 'block';
+  document.getElementById('io-label').textContent = "貼り付けてください:";
+  document.getElementById('save-textarea').value = "";
+  const btn = document.getElementById('io-action-btn');
+  btn.style.display = 'block';
+  btn.textContent = "読み込む";
+}
+
+function confirmImport() {
+  const str = document.getElementById('save-textarea').value.trim();
+  if (!str) return;
+  try {
+    const decoded = atob(str);
+    JSON.parse(decoded);
+    localStorage.setItem(SAVE_KEY, decoded);
+    location.reload();
+  } catch (e) {
+    alert("データが無効です");
+  }
+}
+
+function toggleSidebar() {
+  document.getElementById('app-wrapper').classList.toggle('closed');
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.sidebar-content').forEach(c => c.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// 起動
 init();
+
+
+
+
+
