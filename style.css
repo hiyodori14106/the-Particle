@@ -1,17 +1,26 @@
+/* =========================================
+   CSS Variables & Base Styles
+   ========================================= */
 :root {
-  --bg-color: #0f0f0f;
-  --panel-bg: #161616;
-  --sidebar-bg: #1a1a1a;
-  --accent-color: #00e676;
-  --accent-hover: #69f0ae;
+  /* カラーパレット */
+  --bg-color: #0f0f0f;       /* 背景色 */
+  --panel-bg: #161616;       /* パネル背景 */
+  --sidebar-bg: #1a1a1a;     /* サイドバー背景 */
+  --accent-color: #00e676;   /* メインアクセント（緑） */
+  --accent-hover: #69f0ae;   /* アクセント（ホバー時） */
+  --infinity-color: #b388ff; /* Infinity用カラー（紫） */
   --text-main: #ffffff;
   --text-sub: #a0a0a0;
   --border-color: #333;
-  --danger-color: #ff4444;
+  --danger-color: #ff4444;   /* 警告色 */
+  
+  /* フォント */
   --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   background-color: var(--bg-color);
@@ -19,21 +28,26 @@ body {
   font-family: var(--font-mono);
   margin: 0;
   height: 100vh;
-  overflow: hidden;
+  overflow: hidden; /* スクロールバーを隠す */
+  
+  /* 数字がちらつかないように等幅設定 */
   font-feature-settings: "tnum";
   font-variant-numeric: tabular-nums;
   -webkit-font-feature-settings: "tnum";
 }
 
-/* レイアウト */
+/* =========================================
+   Layout Structure
+   ========================================= */
 .app-wrapper {
   display: flex;
   width: 100%;
   height: 100%;
   position: relative;
-  transition: 0.3s ease;
+  transition: 0.3s ease; /* サイドバー開閉アニメーション */
 }
 
+/* メインゲーム画面 */
 .game-panel {
   flex: 1;
   display: flex;
@@ -43,6 +57,9 @@ body {
   z-index: 1;
 }
 
+/* =========================================
+   Header & Currency Display
+   ========================================= */
 header {
   text-align: center;
   margin-bottom: 10px;
@@ -50,18 +67,44 @@ header {
   padding-bottom: 10px;
 }
 
-h1 { margin: 0; font-size: 1.5rem; letter-spacing: 4px; opacity: 0.5; }
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: 4px;
+  opacity: 0.5;
+}
 
 .currency-container h2 {
   font-size: 2.5rem;
   margin: 10px 0;
   text-shadow: 0 0 15px rgba(0, 230, 118, 0.3);
-  font-variant-numeric: tabular-nums;
   letter-spacing: 1px;
 }
-#pps-display { color: var(--text-sub); margin: 0; font-size: 0.9rem; }
 
-/* コントロールバー (購入数切り替え) */
+#pps-display {
+  color: var(--text-sub);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Infinity Point Display */
+#ip-display-container {
+  animation: pulsePurple 3s infinite ease-in-out;
+}
+#ip-val {
+  font-size: 1.2rem;
+  text-shadow: 0 0 10px var(--infinity-color);
+}
+
+@keyframes pulsePurple {
+  0% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 0.8; transform: scale(1); }
+}
+
+/* =========================================
+   Control Bar (Buy x1/x10/x100)
+   ========================================= */
 .control-bar {
   display: flex;
   align-items: center;
@@ -69,17 +112,20 @@ h1 { margin: 0; font-size: 1.5rem; letter-spacing: 4px; opacity: 0.5; }
   margin-bottom: 10px;
   padding: 0 5px;
 }
+
 .control-label {
   font-size: 0.8rem;
   color: var(--text-sub);
   margin-right: 10px;
 }
+
 .toggle-group {
   display: flex;
   background: #222;
   border-radius: 4px;
   padding: 2px;
 }
+
 .toggle-btn {
   background: transparent;
   border: none;
@@ -90,23 +136,30 @@ h1 { margin: 0; font-size: 1.5rem; letter-spacing: 4px; opacity: 0.5; }
   border-radius: 2px;
   transition: 0.2s;
 }
+
 .toggle-btn:hover { color: #fff; }
+
 .toggle-btn.active {
   background: var(--accent-color);
   color: #000;
   font-weight: bold;
 }
 
-/* リストエリア */
+/* =========================================
+   Generator List
+   ========================================= */
 #generator-container {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: auto; /* 縦スクロール */
   padding-right: 5px;
 }
+
+/* スクロールバーのデザイン */
 #generator-container::-webkit-scrollbar { width: 6px; }
 #generator-container::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+#generator-container::-webkit-scrollbar-track { background: #111; }
 
-/* 加速器の行デザイン */
+/* 行のデザイン */
 .generator-row {
   background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
   border-left: 3px solid var(--border-color);
@@ -117,17 +170,50 @@ h1 { margin: 0; font-size: 1.5rem; letter-spacing: 4px; opacity: 0.5; }
   align-items: center;
   transition: 0.2s;
 }
+
 .generator-row:hover {
   background: rgba(255,255,255,0.06);
   border-left-color: var(--accent-color);
 }
 
 .gen-info { flex-grow: 1; }
-.gen-name { font-size: 1rem; font-weight: bold; color: #ddd; }
+.gen-name { font-size: 1rem; font-weight: bold; color: #ddd; display: flex; align-items: center; }
 .gen-amount { color: var(--text-sub); font-size: 0.85rem; margin-top: 2px; }
 .gen-multiplier { color: var(--accent-color); font-size: 0.85rem; }
 
-/* ボタン群 */
+/* =========================================
+   Auto-buyer Badge
+   ========================================= */
+.auto-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #222;
+  color: #555;
+  margin-left: 10px;
+  border: 1px solid #333;
+  transition: 0.3s;
+  font-weight: normal;
+}
+
+.auto-badge.active {
+  background: rgba(0, 230, 118, 0.1);
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 5px rgba(0, 230, 118, 0.3);
+  animation: pulseBadge 2s infinite;
+}
+
+@keyframes pulseBadge {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
+/* =========================================
+   Buttons
+   ========================================= */
 .btn-group {
   display: flex;
   flex-direction: column;
@@ -135,8 +221,14 @@ h1 { margin: 0; font-size: 1.5rem; letter-spacing: 4px; opacity: 0.5; }
   min-width: 140px;
 }
 
-button { font-family: var(--font-mono); outline: none; cursor: pointer; user-select: none; }
+button {
+  font-family: var(--font-mono);
+  outline: none;
+  cursor: pointer;
+  user-select: none;
+}
 
+/* 購入ボタン */
 .buy-btn {
   background-color: transparent;
   border: 1px solid var(--accent-color);
@@ -148,6 +240,7 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
   transition: all 0.1s;
   font-size: 0.8rem;
 }
+
 .buy-btn:hover {
   background-color: var(--accent-color);
   color: #000;
@@ -166,7 +259,7 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
   box-shadow: 0 0 8px #29b6f6;
 }
 
-/* 無効化状態 */
+/* 無効化（購入不可）状態 */
 .buy-btn.disabled {
   border-color: #444;
   color: #555;
@@ -176,7 +269,9 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
   pointer-events: none;
 }
 
-/* プレステージエリア */
+/* =========================================
+   Prestige Banner (Linac)
+   ========================================= */
 .prestige-banner {
   margin-bottom: 15px;
   padding: 10px;
@@ -186,6 +281,7 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
   text-align: center;
   animation: pulseBorder 3s infinite;
 }
+
 @keyframes pulseBorder {
   0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.2); }
   50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
@@ -198,6 +294,7 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
   margin-bottom: 8px;
   font-weight: bold;
 }
+
 .prestige-btn {
   background: linear-gradient(to bottom, #ffd700, #ffa000);
   color: #000;
@@ -211,9 +308,11 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
 }
 .prestige-btn:hover { filter: brightness(1.1); }
 
-/* サイドバー */
+/* =========================================
+   Sidebar
+   ========================================= */
 .sidebar {
-  width: 320px; /* 少し広げた */
+  width: 320px;
   background-color: var(--sidebar-bg);
   border-left: 1px solid var(--border-color);
   display: flex;
@@ -222,7 +321,11 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
   z-index: 10;
   flex-shrink: 0;
 }
-.app-wrapper.closed .sidebar { margin-right: -320px; }
+
+/* 閉じた時の状態 */
+.app-wrapper.closed .sidebar {
+  margin-right: -320px;
+}
 
 .sidebar-header {
   display: flex;
@@ -230,7 +333,9 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
   background: #111;
   border-bottom: 1px solid var(--border-color);
 }
+
 .tab-container { flex: 1; display: flex; }
+
 .tab-btn {
   flex: 1;
   background: transparent;
@@ -240,7 +345,12 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
   font-weight: bold;
   font-size: 0.9rem;
 }
-.tab-btn.active { color: var(--accent-color); border-bottom-color: var(--accent-color); }
+
+.tab-btn.active {
+  color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
+}
+
 .close-btn {
   width: 45px;
   background: transparent;
@@ -251,8 +361,12 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
 .close-btn:hover { background: #333; color: #fff; }
 
 .sidebar-body { padding: 15px; flex: 1; overflow-y: auto; }
+
 .sidebar-content { display: none; }
-.sidebar-content.active { display: block; animation: fadeIn 0.2s; }
+.sidebar-content.active {
+  display: block;
+  animation: fadeIn 0.2s;
+}
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
 .sidebar h3 {
@@ -264,6 +378,7 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
   margin-bottom: 15px;
 }
 
+/* 統計行 */
 .stat-row {
   display: flex; justify-content: space-between;
   margin-bottom: 10px; padding: 8px;
@@ -272,31 +387,38 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
 .stat-label { color: #888; font-size: 0.8rem; }
 .stat-val { color: #fff; font-weight: bold; font-size: 0.9rem; }
 
-.ui-btn { width: 100%; padding: 10px; border: none; border-radius: 3px; font-weight: bold; margin-bottom: 10px; }
+/* 設定・UIボタン */
+.ui-btn {
+  width: 100%; padding: 10px; border: none;
+  border-radius: 3px; font-weight: bold; margin-bottom: 10px;
+}
 .ui-btn.primary { background: #333; color: #fff; border: 1px solid #555; }
 .ui-btn.primary:hover { background: #444; border-color: #777; }
+
 .ui-btn.secondary { background: #222; color: #ccc; border: 1px solid #444; }
 .ui-btn.secondary:hover { background: #333; color: #fff; }
+
 .ui-btn.danger { background: var(--danger-color); color: white; }
 .ui-btn.danger:hover { background: #d32f2f; }
 
 .select-wrapper { margin-bottom: 15px; }
 .select-wrapper select {
-  width: 100%;
-  padding: 8px;
-  background: #222;
-  color: #fff;
-  border: 1px solid #444;
-  border-radius: 3px;
+  width: 100%; padding: 8px;
+  background: #222; color: #fff;
+  border: 1px solid #444; border-radius: 3px;
 }
 
-.danger-zone { margin-top: 30px; border: 1px solid var(--danger-color); padding: 10px; background: rgba(255,68,68,0.05); }
+.danger-zone {
+  margin-top: 30px; border: 1px solid var(--danger-color);
+  padding: 10px; background: rgba(255,68,68,0.05);
+}
 .danger-zone h4 { color: var(--danger-color); margin: 0 0 5px 0; font-size: 0.9rem; }
 .danger-zone p { font-size: 0.75rem; color: #aaa; margin-bottom: 10px; }
 
 .status-text { text-align: center; font-size: 0.75rem; color: #555; }
 .sidebar-footer { text-align: center; padding: 10px; color: #444; font-size: 0.7rem; border-top: 1px solid #222; }
 
+/* フローティングメニューボタン */
 .float-menu-btn {
   position: absolute; top: 15px; right: 15px;
   background: #222; color: #fff;
@@ -306,3 +428,109 @@ button { font-family: var(--font-mono); outline: none; cursor: pointer; user-sel
 }
 .float-menu-btn:hover { background: #333; }
 .app-wrapper.closed .float-menu-btn { display: block; }
+
+
+/* =========================================
+   NEW: Glitch Effects (Infinity)
+   ========================================= */
+.glitch-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; /* クリックを透過させる */
+  z-index: 999;
+  opacity: 0;
+  mix-blend-mode: exclusion;
+  background: transparent;
+  transition: opacity 0.5s;
+}
+
+/* グリッチ発動時のアニメーション */
+body.glitched .glitch-overlay {
+  background: rgba(255, 0, 0, 0.02);
+  animation: noise 0.2s infinite;
+}
+
+body.glitched h1, 
+body.glitched h2, 
+body.glitched .generator-row {
+  animation: glitch-skew 0.3s infinite steps(2);
+  text-shadow: 2px 0 #ff0000, -2px 0 #0000ff;
+}
+
+@keyframes noise {
+  0% { transform: translate(0,0); }
+  10% { transform: translate(-5px,5px); }
+  20% { transform: translate(-5px,-5px); }
+  30% { transform: translate(5px,5px); }
+  40% { transform: translate(5px,-5px); }
+  50% { transform: translate(-5px,5px); }
+  60% { transform: translate(-5px,-5px); }
+  70% { transform: translate(5px,5px); }
+  80% { transform: translate(5px,-5px); }
+  90% { transform: translate(0,0); }
+  100% { transform: translate(0,0); }
+}
+
+@keyframes glitch-skew {
+  0% { transform: skew(0deg); }
+  20% { transform: skew(-2deg); }
+  40% { transform: skew(2deg); }
+  60% { transform: skew(0deg); }
+  80% { transform: skew(-1deg); }
+  100% { transform: skew(0deg); }
+}
+
+/* =========================================
+   NEW: Big Crunch Animation
+   ========================================= */
+.crunch-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: white;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  animation: implode 4s forwards;
+}
+
+.crunch-message {
+  text-align: center;
+  color: black;
+  opacity: 0;
+  animation: fadeInText 2s 1.5s forwards;
+}
+
+.crunch-message h1 {
+  font-size: 3rem;
+  letter-spacing: 10px;
+  margin: 0;
+  color: #000;
+  opacity: 1;
+}
+
+.crunch-message p {
+  color: #333;
+  font-size: 1.2rem;
+}
+
+@keyframes implode {
+  0% { background: rgba(255,255,255,0); transform: scale(1); }
+  10% { background: rgba(255,255,255,1); transform: scale(1); }
+  90% { background: rgba(0,0,0,1); transform: scale(1); }
+  100% { background: #000; }
+}
+
+@keyframes fadeInText {
+  0% { opacity: 0; transform: scale(2); filter: blur(10px); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+
+
+
+
+Evaluate
+
+Compare
