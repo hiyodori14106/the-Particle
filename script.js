@@ -1,11 +1,11 @@
 /**
- * the-Particle  v1.1.0
- * - Hide Shift Stats until first Shift
+ * the-Particle v2.3.1 (Shift Update & Infinity Fix)
  */
 
-const SAVE_KEY = 'theParticle_v1_1';
-const INFINITY_LIMIT = 1.79e308;
+const SAVE_KEY = 'theParticle_v2_3_1';
+const INFINITY_LIMIT = 1.79e308; // JSの数値限界付近
 
+// 単位配列
 const UNITS_ENG = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
 const UNITS_JP = ['', '万', '億', '兆', '京', '垓', '𥝱', '穣', '溝', '澗', '正', '載', '極'];
 
@@ -50,7 +50,7 @@ function getInitialState() {
 }
 
 let game = getInitialState();
-let isCrunching = false;
+let isCrunching = false; // アニメーション中の操作ブロック用フラグ
 
 // --- ユーティリティ ---
 function format(num) {
@@ -59,6 +59,7 @@ function format(num) {
   if (num < 1000) return num.toFixed(2);
   
   const type = game.settings ? game.settings.notation : 'sci';
+  
   if (type === 'sci') return formatScientific(num);
   if (type === 'eng') {
     let exponent = Math.floor(Math.log10(num));
@@ -104,22 +105,28 @@ function getCost(gen) {
   return gen.baseCost * Math.pow(gen.costMult, gen.bought);
 }
 
+// ライナック(Prestige)によるベース倍率計算
 function getLinacBaseMult() {
   const s = game.shifts || 0;
+  // 初期1.2倍 + シフト回数 * 0.2
   return 1.2 + (s * 0.2);
 }
 
+// 全体生産倍率
 function getGlobalMultiplier() {
   const base = getLinacBaseMult();
   const l = game.linacs || 0;
+  // base ^ linac数
   return Math.pow(base, l);
 }
 
+// 次のライナックに必要なMk.8の数
 function getLinacReq() {
   const l = game.linacs || 0;
   return 1 + (l * 10);
 }
 
+// 次のシフトに必要なライナック回数
 function getShiftReq() {
   const s = game.shifts || 0;
   return 5 + (s * 5);
@@ -127,15 +134,16 @@ function getShiftReq() {
 
 // --- ゲームループ ---
 function gameLoop() {
-  if (isCrunching) return;
+  if (isCrunching) return; // クランチ演出中は処理停止
 
   const now = Date.now();
   let dt = (now - game.lastTick) / 1000;
-  if (dt > 1) dt = 1; 
+  if (dt > 1) dt = 1; // オフライン進行の上限（簡易）
   game.lastTick = now;
 
   if (isNaN(game.particles)) game.particles = 10;
   
+  // 無限到達チェック
   if (game.particles >= INFINITY_LIMIT) {
     triggerBigCrunch();
     return;
@@ -145,7 +153,8 @@ function gameLoop() {
 
   const globalMult = getGlobalMultiplier();
 
-  // 生産
+  // --- 生産処理 ---
+  // Mk.1 -> 粒子
   const g0 = game.generators[0];
   const pps = g0.amount * g0.production * globalMult;
   const produced = pps * dt;
@@ -155,7 +164,7 @@ function gameLoop() {
       game.stats.totalParticles += produced;
   }
 
-  // カスケード
+  // Mk.X -> Mk.(X-1) (カスケード生産)
   for (let i = 1; i < game.generators.length; i++) {
     const producer = game.generators[i];
     const target = game.generators[i - 1];
@@ -165,7 +174,7 @@ function gameLoop() {
     }
   }
 
-  // オートバイヤー
+  // オートバイヤー処理 (0.5秒ごと)
   game.autobuyerTimer = (game.autobuyerTimer || 0) + dt;
   if (game.autobuyerTimer >= 0.5) {
     runAutobuyers();
@@ -174,23 +183,29 @@ function gameLoop() {
 
   updateUI(pps);
   
+  // サイドバーが開いている時だけ統計更新
   const wrapper = document.getElementById('app-wrapper');
   if (wrapper && !wrapper.classList.contains('closed')) {
     updateStats();
   }
   
+  // オートセーブ (約10秒ごと)
   if (now % 10000 < 20) saveGame(true);
+  
   requestAnimationFrame(gameLoop);
 }
 
 // --- アクション ---
 function runAutobuyers() {
   game.generators.forEach((gen, index) => {
+    // 自動購入のアンロック条件チェック
     const threshold = Number('1e' + (50 + index * 10));
     if (!gen.autoUnlocked && game.particles >= threshold) {
       gen.autoUnlocked = true;
     }
+    // 購入処理
     if (gen.autoUnlocked && gen.autoActive) {
+      // 簡易的に10回まで試行
       for(let k=0; k<10; k++) {
         const cost = getCost(gen);
         if (game.particles >= cost) {
@@ -242,6 +257,7 @@ function buyGenerator(index) {
 function buyMaxGenerator(index) {
   const gen = game.generators[index];
   let count = 0;
+  // ループ制限を設けてフリーズ防止
   for(let i=0; i<100; i++){
     const cost = getCost(gen);
     if (game.particles >= cost) {
@@ -257,6 +273,7 @@ function buyMaxGenerator(index) {
   if (count > 0) updateUI(0);
 }
 
+// 通常のリセット（ライナック）
 function doLinac() {
   const req = getLinacReq();
   if (game.generators[7].amount < req) return;
@@ -267,6 +284,7 @@ function doLinac() {
   game.linacs = (game.linacs || 0) + 1;
   game.stats.totalLinacs = (game.stats.totalLinacs || 0) + 1;
   
+  // リセット処理
   game.particles = 10;
   game.generators.forEach(gen => {
     gen.amount = 0;
@@ -278,6 +296,7 @@ function doLinac() {
   updateUI(0);
 }
 
+// 上位リセット（シフト）
 function doLinacShift() {
   const shiftReq = getShiftReq();
   if ((game.linacs || 0) < shiftReq) return;
@@ -288,6 +307,8 @@ function doLinacShift() {
   if (!confirm(`【警告】ライナック・シフトを実行しますか？\n\n失うもの:\n- 全ての粒子\n- 全てのAccelerator\n- 現在のライナック数 (${game.linacs}回)\n\n得られるもの:\n- ライナック倍率強化 (${format(currentBase)} -> ${format(nextBase)})\n\n`)) return;
 
   game.shifts = (game.shifts || 0) + 1;
+  
+  // シフト時はライナック数も0に戻る
   game.linacs = 0;
   game.particles = 10;
   
@@ -302,7 +323,7 @@ function doLinacShift() {
   alert(`シフト完了！\n現在のライナック倍率が ${format(nextBase)}倍 になりました。`);
 }
 
-// --- UI ---
+// --- UI更新 ---
 function updateUI(pps) {
   const pDisplay = document.getElementById('particle-display');
   if(pDisplay) pDisplay.textContent = `${format(game.particles)} 粒子`;
@@ -310,16 +331,20 @@ function updateUI(pps) {
   const ppsDisplay = document.getElementById('pps-display');
   if(ppsDisplay) ppsDisplay.textContent = `(+${format(pps)} /秒)`;
 
+  // Infinity Point 表示
   const ipContainer = document.getElementById('ip-display-container');
-  if (ipContainer && game.infinity && game.infinity.ip > 0) {
-    ipContainer.style.display = 'block';
-    document.getElementById('ip-val').textContent = game.infinity.ip;
+  if (ipContainer) {
+    if (game.infinity && game.infinity.ip > 0) {
+      ipContainer.style.display = 'block';
+      document.getElementById('ip-val').textContent = game.infinity.ip;
+    } else {
+      ipContainer.style.display = 'none';
+    }
   }
 
-  // --- シフト情報バーの表示制御 (NEW) ---
+  // シフト情報バー
   const shiftStatusBar = document.getElementById('shift-status');
   if (shiftStatusBar) {
-      // シフト回数が1回以上の場合のみ表示
       if ((game.shifts || 0) > 0) {
           shiftStatusBar.style.display = 'block';
           const baseMult = getLinacBaseMult();
@@ -329,15 +354,15 @@ function updateUI(pps) {
           shiftStatusBar.style.display = 'none';
       }
   }
-  // ----------------------------------
 
-  // プレステージ/シフトバナー
+  // プレステージ/シフトバナー制御
   const linacReq = getLinacReq();
   const shiftReq = getShiftReq();
   const pContainer = document.getElementById('prestige-container');
   const baseMult = getLinacBaseMult();
 
   if (pContainer) {
+    // ライナックまたはシフト条件を満たしていれば表示
     if (game.generators[7].amount >= linacReq || game.linacs >= shiftReq) {
         pContainer.style.display = 'block';
         
@@ -347,6 +372,7 @@ function updateUI(pps) {
         const nextShiftEl = document.getElementById('next-shift-req');
         if(nextShiftEl) nextShiftEl.textContent = shiftReq;
 
+        // ライナックボタン
         const btnLinac = document.getElementById('btn-linac');
         if (btnLinac) {
             if (game.generators[7].amount >= linacReq) {
@@ -360,6 +386,7 @@ function updateUI(pps) {
             }
         }
 
+        // シフトボタン
         const btnShift = document.getElementById('btn-shift');
         if (btnShift) {
             if (game.linacs >= shiftReq) {
@@ -376,7 +403,7 @@ function updateUI(pps) {
     }
   }
 
-  // Generators
+  // ジェネレーター一覧更新
   game.generators.forEach((gen, index) => {
     const btn = document.getElementById(`btn-${index}`);
     const btnMax = document.getElementById(`btn-max-${index}`);
@@ -385,6 +412,7 @@ function updateUI(pps) {
     const buyAmt = game.settings.buyAmount;
     const cost = getBulkCost(gen, buyAmt);
     
+    // 自動購入バッジ
     const autoBadge = document.getElementById(`auto-badge-${index}`);
     const threshold = Number('1e' + (50 + index * 10));
     
@@ -406,11 +434,13 @@ function updateUI(pps) {
       }
     }
 
+    // 数値更新
     document.getElementById(`amount-${index}`).textContent = `所持: ${format(gen.amount)}`;
     document.getElementById(`mult-${index}`).textContent = `x${format(gen.production * getGlobalMultiplier())}`;
     
     btn.textContent = `${buyAmt}個: ${format(cost)}`;
     
+    // ボタンの有効/無効
     if (game.particles >= cost) btn.classList.remove('disabled');
     else btn.classList.add('disabled');
     
@@ -450,12 +480,14 @@ function updateGlitchEffect() {
   const overlay = document.getElementById('glitch-layer');
   if (!overlay) return;
   
+  // 1e250あたりからグリッチ開始
   if (game.particles < 1e250) {
     document.body.classList.remove('glitched');
     overlay.style.opacity = 0;
     return;
   }
   const logP = Math.log10(game.particles);
+  // 250乗～308乗の間で強くなる
   const intensity = (logP - 250) / (308 - 250); 
   if (intensity > 0) {
     document.body.classList.add('glitched');
@@ -463,39 +495,48 @@ function updateGlitchEffect() {
   }
 }
 
+// --- ビッグ・クランチ（修正版） ---
 function triggerBigCrunch() {
-  isCrunching = true;
   const currentTime = Date.now() - game.stats.startTime;
   
   if (!game.infinity) game.infinity = { ip:0, crunchCount:0, bestTime:null };
+  
+  // 報酬計算
   game.infinity.ip += 1;
   game.infinity.crunchCount += 1;
   if (game.infinity.bestTime === null || currentTime < game.infinity.bestTime) {
     game.infinity.bestTime = currentTime;
   }
   
-  saveGame(true);
+  // ここでフラグを立てる（セーブ防止はアニメーション中のみ）
+  isCrunching = true;
+
+  // 演出表示
   const overlay = document.getElementById('crunch-overlay');
   if(overlay) overlay.style.display = 'flex';
   
   setTimeout(() => {
+    // 4秒後にリセット実行
     performInfinityReset();
-    if(overlay) overlay.style.display = 'none';
-    isCrunching = false;
-    gameLoop();
   }, 4000);
 }
 
 function performInfinityReset() {
+  // 引き継ぐデータを退避
+  // 1. Infinity関連
   const keptInfinity = JSON.parse(JSON.stringify(game.infinity));
+  // 2. 設定（表記法など）
   const keptSettings = JSON.parse(JSON.stringify(game.settings));
+  // 3. 自動購入の設定（アンロック状態とON/OFF）
   const keptAutobuyers = game.generators.map(gen => ({
     unlocked: gen.autoUnlocked,
     active: gen.autoActive
   }));
   
+  // 全データを初期化
   game = getInitialState();
   
+  // 退避データを復元
   game.infinity = keptInfinity;
   game.settings = keptSettings;
   game.generators.forEach((gen, index) => {
@@ -505,15 +546,23 @@ function performInfinityReset() {
     }
   });
   
+  // リセット完了したのでセーブ可能にする
+  isCrunching = false;
+  
+  // 新しい状態をセーブ
   saveGame();
+  
+  // 画面リロード
   location.reload();
 }
 
 // --- セーブ・ロード ---
 function saveGame(isAuto = false) {
-  if(isCrunching) return; 
+  if(isCrunching) return; // アニメーション中はセーブしない
+  
   game.lastTick = Date.now();
   localStorage.setItem(SAVE_KEY, JSON.stringify(game));
+  
   if (!isAuto) {
     const s = document.getElementById('save-status');
     if(s) {
@@ -530,6 +579,7 @@ function loadGame() {
       const parsed = JSON.parse(data);
       const fresh = getInitialState();
       
+      // 古いデータ形式の互換性維持
       let loadedLinacs = 0;
       if (parsed.linacs !== undefined) {
           loadedLinacs = parsed.linacs;
@@ -543,13 +593,11 @@ function loadGame() {
 
       let loadedStats = { ...fresh.stats, ...(parsed.stats || {}) };
       if (loadedStats.totalLinacs === undefined || isNaN(loadedStats.totalLinacs)) {
-          if (parsed.stats && parsed.stats.prestigeCount) {
-              loadedStats.totalLinacs = parsed.stats.prestigeCount;
-          } else {
-              loadedStats.totalLinacs = loadedLinacs; 
-          }
+          // 互換処理
+          loadedStats.totalLinacs = loadedLinacs; 
       }
 
+      // ゲームオブジェクトの再構築
       game = { ...fresh, ...parsed };
       game.linacs = loadedLinacs;
       game.shifts = loadedShifts;
@@ -557,12 +605,14 @@ function loadGame() {
       game.infinity = { ...fresh.infinity, ...(parsed.infinity || {}) };
       game.settings = { ...fresh.settings, ...(parsed.settings || {}) };
       
+      // ジェネレーター情報のマージ
       if (parsed.generators) {
         game.generators = parsed.generators.map((g, i) => {
             const freshGen = fresh.generators[i];
             return { 
                 ...freshGen, 
                 ...g,
+                // 新しいプロパティが増えた場合の対策
                 autoUnlocked: g.autoUnlocked !== undefined ? g.autoUnlocked : freshGen.autoUnlocked,
                 autoActive: g.autoActive !== undefined ? g.autoActive : freshGen.autoActive
             };
@@ -580,11 +630,12 @@ function loadGame() {
 }
 
 function hardReset() {
-    if(confirm("本当に全てのデータを消去しますか？")) {
+    if(confirm("本当に全てのデータを消去しますか？（元に戻せません）")) {
         localStorage.removeItem(SAVE_KEY);
         location.reload();
     }
 }
+
 function exportSave() {
     saveGame(true);
     const str = btoa(JSON.stringify(game));
@@ -592,20 +643,24 @@ function exportSave() {
     document.getElementById('io-area').style.display = 'block';
     area.value = str;
 }
+
 function importSave() { document.getElementById('io-area').style.display = 'block'; }
+
 function confirmImport() {
     const str = document.getElementById('save-textarea').value.trim();
     try {
         const decoded = atob(str);
-        JSON.parse(decoded);
+        JSON.parse(decoded); // 有効なJSONかチェック
         localStorage.setItem(SAVE_KEY, decoded);
         location.reload();
-    } catch(e) { alert("データ無効"); }
+    } catch(e) { alert("データが無効です"); }
 }
+
 function toggleSidebar() { 
     const el = document.getElementById('app-wrapper');
     if(el) el.classList.toggle('closed');
 }
+
 function switchTab(name, btn) {
     document.querySelectorAll('.sidebar-content').forEach(c => c.classList.remove('active'));
     const tab = document.getElementById(`tab-${name}`);
@@ -615,8 +670,9 @@ function switchTab(name, btn) {
     btn.classList.add('active');
 }
 
-// --- 起動 ---
+// --- 初期化 ---
 function init() {
+  // ジェネレーターリストのDOM生成
   const container = document.getElementById('generator-container');
   if(container) {
       container.innerHTML = '';
@@ -650,3 +706,11 @@ function init() {
 }
 
 init();
+
+
+
+
+
+Evaluate
+
+Compare
