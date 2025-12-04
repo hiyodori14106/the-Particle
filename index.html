@@ -4,64 +4,69 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>the-Particle</title>
-  <link rel="icon" type="image/png" href="title.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- グリッチ・ノイズ演出用レイヤー -->
+  <!-- 背景エフェクト -->
   <div id="glitch-layer" class="glitch-overlay"></div>
   
-  <!-- ビッグ・クランチ演出用レイヤー -->
-  <div id="crunch-overlay" class="crunch-overlay" style="display: none;">
-    <div class="crunch-message">
-      <h1>UNIVERSE COLLAPSED</h1>
-      <p>宇宙は粒子の重みに耐えきれませんでした</p>
+  <!-- ニュースティッカー -->
+  <div class="news-ticker-container">
+    <div class="news-label">NEWS</div>
+    <div class="news-content" id="news-content">
+      <span>System initialized... Waiting for particle generation...</span>
     </div>
   </div>
 
+  <!-- アプリケーション本体 -->
   <div class="app-wrapper" id="app-wrapper">
-    <!-- メインパネル -->
     <main class="game-panel">
       <header>
         <h1>the-Particle</h1>
+        
+        <!-- 進捗バーエリア -->
+        <div class="progress-section">
+          <div class="progress-row" id="linac-prog-row">
+            <span class="prog-label">Next Linac:</span>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-linac"></div></div>
+          </div>
+          <div class="progress-row" id="shift-prog-row" style="display:none;">
+            <span class="prog-label">Next Shift:</span>
+            <div class="progress-bar-bg"><div class="progress-bar-fill shift" id="prog-shift"></div></div>
+          </div>
+        </div>
+
         <div class="currency-container">
           <h2 id="particle-display">0 粒子</h2>
           <p id="pps-display">(+0.00 /秒)</p>
         </div>
-        <!-- Infinity Point 表示 -->
-        <div id="ip-display-container" style="display:none; color: #b388ff; font-weight:bold; margin-top:5px;">
+        
+        <div id="ip-display-container" style="display:none;">
           Infinity Points: <span id="ip-val">0</span>
         </div>
       </header>
 
-      <!-- シフト情報バー (初期状態は非表示: display:none) -->
       <div id="shift-status" class="shift-bar" style="display: none;">
-        現在のライナック倍率: <span id="shift-mult-display" style="color:#00e676; font-weight:bold;">x1.2</span>
-        <span style="font-size:0.8em; color:#888; margin-left:10px;">(シフト回数: <span id="shift-count">0</span>)</span>
+        ライナック倍率: <span id="shift-mult-display">x1.2</span>
+        <span class="shift-count-sub">(シフト: <span id="shift-count">0</span>)</span>
       </div>
 
-      <!-- 次元リセット（プレステージ）バナー -->
       <div id="prestige-container" class="prestige-banner" style="display: none;">
         <div class="prestige-info">
-          現在のライナック数: <span id="current-linac-count">0</span> / 次のシフトに必要なライナック数: <span id="next-shift-req">5</span>
+          現在のライナック数: <span id="current-linac-count">0</span> / 必要数: <span id="next-shift-req">5</span>
         </div>
-        
         <div class="prestige-actions">
-          <!-- 通常のライナックボタン -->
-          <button class="prestige-btn" id="btn-linac" onclick="doLinac()">
-            <strong>ライナックを実行</strong><br>
-            <span style="font-size:0.8em;">生産倍率UP & リセット</span>
+          <button class="prestige-btn" id="btn-linac">
+            <strong>ライナックを実行 (L)</strong><br>
+            <span class="btn-sub">生産倍率UP & リセット</span>
           </button>
-          
-          <!-- ライナック・シフトボタン -->
-          <button class="prestige-btn shift-btn" id="btn-shift" onclick="doLinacShift()" style="display:none;">
+          <button class="prestige-btn shift-btn" id="btn-shift" style="display:none;">
             <strong>ライナック・シフト</strong><br>
-            <span style="font-size:0.8em;">全てを失い、ライナック性能強化</span>
+            <span class="btn-sub">次元超越</span>
           </button>
         </div>
       </div>
 
-      <!-- コントロールバー -->
       <div class="control-bar">
         <span class="control-label">購入数:</span>
         <div class="toggle-group">
@@ -69,19 +74,16 @@
           <button class="toggle-btn" onclick="setBuyAmount(10)" id="buy-10">x10</button>
           <button class="toggle-btn" onclick="setBuyAmount(100)" id="buy-100">x100</button>
         </div>
+        <button class="toggle-btn max-all-btn" onclick="buyMaxAll()">MAX ALL (M)</button>
       </div>
 
-      <!-- 加速器リスト -->
       <div id="generator-container">
-        <!-- JSでリスト生成 -->
+        <!-- JSで生成 -->
       </div>
 
-      <button id="sidebar-open-btn" class="float-menu-btn" onclick="toggleSidebar()">
-        ⚙ メニュー
-      </button>
+      <button id="sidebar-open-btn" class="float-menu-btn" onclick="toggleSidebar()">⚙ メニュー</button>
     </main>
 
-    <!-- サイドバー -->
     <aside id="sidebar" class="sidebar">
       <div class="sidebar-header">
         <div class="tab-container">
@@ -92,82 +94,82 @@
       </div>
 
       <div class="sidebar-body">
-        <!-- 統計タブ -->
         <div id="tab-stats" class="sidebar-content active">
-          <h3>STATISTICS (現在の宇宙)</h3>
-          <div class="stat-row">
-            <span class="stat-label">経過時間</span>
-            <span id="stat-time" class="stat-val">00:00:00</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">総生産量</span>
-            <span id="stat-total" class="stat-val">0 粒子</span>
-          </div>
-          <div class="stat-row" id="row-prestige" style="display:none;">
-            <span class="stat-label">通算ライナック回数</span>
-            <span id="stat-prestige" class="stat-val">0 回</span>
-          </div>
-          <div class="stat-row" id="row-shift" style="display:none;">
-            <span class="stat-label">シフト回数</span>
-            <span id="stat-shift" class="stat-val">0 回</span>
-          </div>
+          <h3>STATISTICS</h3>
+          <div class="stat-row"><span class="stat-label">経過時間</span><span id="stat-time" class="stat-val">00:00:00</span></div>
+          <div class="stat-row"><span class="stat-label">総生産量</span><span id="stat-total" class="stat-val">0 粒子</span></div>
+          <div class="stat-row" id="row-prestige" style="display:none;"><span class="stat-label">ライナック回数</span><span id="stat-prestige" class="stat-val">0 回</span></div>
+          <div class="stat-row" id="row-shift" style="display:none;"><span class="stat-label">シフト回数</span><span id="stat-shift" class="stat-val">0 回</span></div>
           
           <div id="infinity-stats" style="display:none; margin-top: 20px; border-top: 1px dashed #555; padding-top:10px;">
             <h3 style="color:#b388ff;">COSMIC STATS</h3>
-            <div class="stat-row">
-              <span class="stat-label">Big Crunch 回数</span>
-              <span id="stat-crunch" class="stat-val">0 回</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-label">Infinity到達(最短)</span>
-              <span id="stat-best-inf" class="stat-val">--:--:--</span>
-            </div>
+            <div class="stat-row"><span class="stat-label">Big Crunch</span><span id="stat-crunch" class="stat-val">0 回</span></div>
+            <div class="stat-row"><span class="stat-label">最短Infinity</span><span id="stat-best-inf" class="stat-val">--:--:--</span></div>
           </div>
         </div>
 
-        <!-- 設定タブ -->
         <div id="tab-settings" class="sidebar-content">
+          <h3>GAMEPLAY</h3>
+          <div class="setting-group checkbox-group">
+            <label>
+              <input type="checkbox" id="chk-skip-confirm" onchange="toggleSkipConfirm(this)">
+              リセット時の確認をスキップ
+            </label>
+          </div>
+          
           <h3>DISPLAY</h3>
           <div class="setting-group">
             <label class="setting-label">数値表記</label>
             <div class="select-wrapper">
               <select id="notation-select" onchange="changeNotation(this.value)">
-                <option value="sci">科学的単位</option>
-                <option value="eng">英語単位</option>
-                <option value="jp">日本語単位</option>
+                <option value="sci">科学的単位 (1e50)</option>
+                <option value="eng">英語単位 (100 Qi)</option>
+                <option value="jp">日本語単位 (1極)</option>
               </select>
             </div>
           </div>
 
           <h3>DATA MANAGEMENT</h3>
           <div class="setting-group">
-            <button class="ui-btn primary" onclick="saveGame()">データをセーブ</button>
-            <div class="status-text" id="save-status">オートセーブ有効 (10秒毎)</div>
+            <button class="ui-btn primary" onclick="saveGame()">手動セーブ (S)</button>
+            <div class="status-text" id="save-status">オートセーブ: ON (10s)</div>
           </div>
           <div class="setting-group">
-            <button class="ui-btn secondary" onclick="exportSave()">セーブデータを書き出し</button>
-            <button class="ui-btn secondary" onclick="importSave()">セーブデータを読み込み</button>
-          </div>
-          
-          <div id="io-area" style="display:none; margin-top:10px;">
-            <p style="font-size:0.8rem; color:#888; margin-bottom:5px;" id="io-label">データ:</p>
-            <textarea id="save-textarea" rows="4" style="width:100%; background:#222; color:#fff; border:1px solid #444; font-family:monospace; font-size:0.8rem;"></textarea>
-            <button class="ui-btn primary" id="io-action-btn" style="margin-top:5px;" onclick="confirmImport()">読み込む</button>
+            <button class="ui-btn secondary" onclick="exportSaveToClipboard()">クリップボードにエクスポート</button>
+            <button class="ui-btn secondary" onclick="importSaveFromClipboard()">クリップボードからインポート</button>
           </div>
 
           <div class="setting-group danger-zone">
             <h4>DANGER ZONE</h4>
-            <p>全ての進捗を完全に削除します。</p>
             <button class="ui-btn danger" onclick="hardReset()">COMPLETE WIPE</button>
           </div>
         </div>
       </div>
-
-      <div class="sidebar-footer">
-        ver 2.3.1 Shift Update
-      </div>
+      <div class="sidebar-footer">ver 3.0.0 Particle Expansion</div>
     </aside>
   </div>
+
+  <!-- モーダルウィンドウ -->
+  <div id="custom-modal-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <h3 id="modal-title">TITLE</h3>
+      <div id="modal-body" class="modal-body">Message goes here...</div>
+      <div class="modal-actions" id="modal-actions">
+        <!-- Buttons injected by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ビッグ・クランチ演出 -->
+  <div id="crunch-overlay" class="crunch-overlay" style="display: none;">
+    <div class="crunch-message">
+      <h1>UNIVERSE COLLAPSED</h1>
+      <p>宇宙は粒子の重みに耐えきれませんでした</p>
+    </div>
+  </div>
+
+  <!-- トースト通知コンテナ -->
+  <div id="toast-container" class="toast-container"></div>
 
   <script src="script.js"></script>
 </body>
