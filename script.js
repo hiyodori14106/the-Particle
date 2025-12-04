@@ -285,7 +285,7 @@ function doLinacShift() {
   const currentBase = getLinacBaseMult();
   const nextBase = currentBase + 0.2;
 
-  if (!confirm(`【警告】ライナック・シフトを実行しますか？\n\n失うもの:\n- 全ての粒子\n- 全てのAccelerator\n- 現在のライナック数 (${game.linacs}回)\n\n得られるもの:\n- ライナック倍率強化 (${format(currentBase)} -> ${format(nextBase)})\n\n※統計上のライナック回数は保持されます。`)) return;
+  if (!confirm(`【警告】ライナック・シフトを実行しますか？\n\n失うもの:\n- 全ての粒子\n- 全てのAccelerator\n- 現在のライナック数 (${game.linacs}回)\n\n得られるもの:\n- ライナック倍率強化 (${format(currentBase)} -> ${format(nextBase)})\n\n`)) return;
 
   game.shifts = (game.shifts || 0) + 1;
   game.linacs = 0;
