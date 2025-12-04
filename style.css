@@ -1,362 +1,679 @@
-/* =========================================
-   Base Styles & Variables
-   ========================================= */
-:root {
-  --bg-color: #0d0d0d;
-  --sidebar-bg: #111;
-  --text-main: #e0e0e0;
-  --text-sub: #888;
-  --border-color: #333;
-  --accent-color: #00e676;
-  --danger-color: #ff4444;
-  --infinity-color: #b388ff;
-  --shift-color: #00e5ff;
-  --font-mono: 'Consolas', 'Monaco', monospace;
+/**
+ * the-Particle v2.4.1 (Infinity Fix: No-Reload & IP Fix)
+ */
+
+const SAVE_KEY = 'theParticle_v2_4';
+const INFINITY_LIMIT = 1.79e308; // ビッグクランチ発動ライン
+
+// 単位配列
+const UNITS_ENG = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+const UNITS_JP = ['', '万', '億', '兆', '京', '垓', '𥝱', '穣', '溝', '澗', '正', '載', '極'];
+
+// --- データ初期値 ---
+function getInitialState() {
+  return {
+    particles: 10,
+    linacs: 0, 
+    shifts: 0, 
+    
+    stats: {
+      totalParticles: 10,
+      totalLinacs: 0,
+      startTime: Date.now(),
+    },
+    
+    infinity: {
+      ip: 0,
+      crunchCount: 0,
+      bestTime: null
+    },
+
+    settings: {
+      notation: 'sci',
+      buyAmount: 1
+    },
+
+    lastTick: Date.now(),
+    autobuyerTimer: 0,
+
+    generators: [
+      { id: 0, name: "Accelerator Mk.1", baseCost: 10,   costMult: 1.5, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: true },
+      { id: 1, name: "Accelerator Mk.2", baseCost: 100,  costMult: 1.8, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: true },
+      { id: 2, name: "Accelerator Mk.3", baseCost: 1e3,  costMult: 2.2, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: true },
+      { id: 3, name: "Accelerator Mk.4", baseCost: 1e4,  costMult: 3.0, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: true },
+      { id: 4, name: "Accelerator Mk.5", baseCost: 1e6,  costMult: 4.0, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: true },
+      { id: 5, name: "Accelerator Mk.6", baseCost: 1e8,  costMult: 6.0, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: true },
+      { id: 6, name: "Accelerator Mk.7", baseCost: 1e10, costMult: 10.0, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: true },
+      { id: 7, name: "Accelerator Mk.8", baseCost: 1e12, costMult: 15.0, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: true }
+    ]
+  };
 }
 
-body {
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  font-family: sans-serif;
-  margin: 0;
-  height: 100vh;
-  overflow: hidden;
-  display: flex;
+let game = getInitialState();
+let isCrunching = false; // アニメーション中の操作ブロック用フラグ
+
+// --- ユーティリティ ---
+function format(num) {
+  if (num === undefined || num === null || isNaN(num)) return "0.00";
+  if (!isFinite(num)) return "Infinity";
+  if (num < 1000) return num.toFixed(2);
+  
+  const type = game.settings ? game.settings.notation : 'sci';
+  
+  if (type === 'sci') return formatScientific(num);
+  if (type === 'eng') {
+    let exponent = Math.floor(Math.log10(num));
+    let unitIndex = Math.floor(exponent / 3);
+    if (unitIndex >= UNITS_ENG.length) return formatScientific(num);
+    let mantissa = num / Math.pow(1000, unitIndex);
+    return mantissa.toFixed(2) + " " + UNITS_ENG[unitIndex];
+  }
+  if (type === 'jp') {
+    let exponent = Math.floor(Math.log10(num));
+    let unitIndex = Math.floor(exponent / 4);
+    if (unitIndex >= UNITS_JP.length) return formatScientific(num);
+    let mantissa = num / Math.pow(10000, unitIndex);
+    return mantissa.toFixed(2) + " " + UNITS_JP[unitIndex];
+  }
+  return formatScientific(num);
 }
 
-.app-wrapper {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+function formatScientific(num) {
+  if (!isFinite(num)) return "Infinity";
+  let exponent = Math.floor(Math.log10(num));
+  let mantissa = num / Math.pow(10, exponent);
+  return mantissa.toFixed(2) + "e" + exponent;
 }
 
-.game-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  overflow: hidden;
-  position: relative;
+function formatTime(seconds) {
+  if (!seconds || isNaN(seconds)) return "--:--:--";
+  const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+  const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+  const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+  return `${h}:${m}:${s}`;
 }
 
-/* =========================================
-   Header & Currency
-   ========================================= */
-header {
-  text-align: center;
-  margin-bottom: 10px;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 10px;
+// --- 計算ロジック ---
+function getBulkCost(gen, count) {
+  const r = gen.costMult;
+  const currentCost = gen.baseCost * Math.pow(r, gen.bought);
+  const multiplier = (Math.pow(r, count) - 1) / (r - 1);
+  return currentCost * multiplier;
 }
 
-h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  letter-spacing: 4px;
-  opacity: 0.5;
+function getCost(gen) {
+  return gen.baseCost * Math.pow(gen.costMult, gen.bought);
 }
 
-.currency-container h2 {
-  font-size: 2.5rem;
-  margin: 10px 0;
-  text-shadow: 0 0 15px rgba(0, 230, 118, 0.3);
-  letter-spacing: 1px;
+// ライナック(Prestige)によるベース倍率計算
+function getLinacBaseMult() {
+  const s = game.shifts || 0;
+  // 初期1.2倍 + シフト回数 * 0.2
+  return 1.2 + (s * 0.2);
 }
 
-#pps-display {
-  color: var(--text-sub);
-  margin: 0;
-  font-size: 0.9rem;
+// 全体生産倍率
+function getGlobalMultiplier() {
+  const base = getLinacBaseMult();
+  const l = game.linacs || 0;
+  return Math.pow(base, l);
 }
 
-#ip-display-container {
-  animation: pulsePurple 3s infinite ease-in-out;
-}
-#ip-val {
-  font-size: 1.2rem;
-  text-shadow: 0 0 10px var(--infinity-color);
+// 次のライナックに必要なMk.8の数
+function getLinacReq() {
+  const l = game.linacs || 0;
+  return 1 + (l * 10);
 }
 
-@keyframes pulsePurple {
-  0% { opacity: 0.8; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
-  100% { opacity: 0.8; transform: scale(1); }
+// 次のシフトに必要なライナック回数
+function getShiftReq() {
+  const s = game.shifts || 0;
+  return 5 + (s * 5);
 }
 
-.shift-bar {
-  text-align: center;
-  font-size: 0.9rem;
-  color: #ccc;
-  background: #1a1a1a;
-  padding: 5px;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  border: 1px solid #333;
+// --- ゲームループ ---
+function gameLoop() {
+  if (isCrunching) return; // クランチ演出中は処理停止
+
+  const now = Date.now();
+  let dt = (now - game.lastTick) / 1000;
+  if (dt > 1) dt = 1; 
+  game.lastTick = now;
+
+  if (isNaN(game.particles)) game.particles = 10;
+  
+  // 無限到達チェック
+  if (game.particles >= INFINITY_LIMIT) {
+    triggerBigCrunch();
+    return;
+  }
+
+  updateGlitchEffect();
+
+  const globalMult = getGlobalMultiplier();
+
+  // --- 生産処理 ---
+  const g0 = game.generators[0];
+  const pps = g0.amount * g0.production * globalMult;
+  const produced = pps * dt;
+  
+  if (!isNaN(produced)) {
+      game.particles += produced;
+      game.stats.totalParticles += produced;
+  }
+
+  // カスケード生産
+  for (let i = 1; i < game.generators.length; i++) {
+    const producer = game.generators[i];
+    const target = game.generators[i - 1];
+    const amountToAdd = producer.amount * producer.production * globalMult * dt;
+    if (!isNaN(amountToAdd)) {
+        target.amount += amountToAdd;
+    }
+  }
+
+  // オートバイヤー処理
+  game.autobuyerTimer = (game.autobuyerTimer || 0) + dt;
+  if (game.autobuyerTimer >= 0.5) {
+    runAutobuyers();
+    game.autobuyerTimer = 0;
+  }
+
+  updateUI(pps);
+  
+  const wrapper = document.getElementById('app-wrapper');
+  if (wrapper && !wrapper.classList.contains('closed')) {
+    updateStats();
+  }
+  
+  // オートセーブ
+  if (now % 10000 < 20) saveGame(true);
+  
+  requestAnimationFrame(gameLoop);
 }
 
-/* =========================================
-   Controls
-   ========================================= */
-.control-bar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-  padding: 0 5px;
+// --- アクション ---
+function runAutobuyers() {
+  game.generators.forEach((gen, index) => {
+    const threshold = Number('1e' + (50 + index * 10));
+    if (!gen.autoUnlocked && game.particles >= threshold) {
+      gen.autoUnlocked = true;
+    }
+    if (gen.autoUnlocked && gen.autoActive) {
+      for(let k=0; k<10; k++) {
+        const cost = getCost(gen);
+        if (game.particles >= cost) {
+          game.particles -= cost;
+          gen.amount++;
+          gen.bought++;
+          gen.production *= 1.1;
+        } else {
+          break;
+        }
+      }
+    }
+  });
 }
 
-.control-label {
-  font-size: 0.8rem;
-  color: var(--text-sub);
-  margin-right: 10px;
+function toggleAutobuyer(index) {
+  const gen = game.generators[index];
+  if (!gen.autoUnlocked) return;
+  gen.autoActive = !gen.autoActive;
+  updateUI(0);
 }
 
-.toggle-group {
-  display: flex;
-  background: #222;
-  border-radius: 4px;
-  padding: 2px;
+function setBuyAmount(amount) {
+  game.settings.buyAmount = amount;
+  document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+  const btn = document.getElementById(`buy-${amount}`);
+  if(btn) btn.classList.add('active');
+  updateUI(0);
 }
 
-.toggle-btn {
-  background: transparent;
-  border: none;
-  color: #666;
-  padding: 4px 12px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  border-radius: 2px;
-  transition: 0.2s;
-}
-.toggle-btn:hover { color: #fff; }
-.toggle-btn.active {
-  background: var(--accent-color);
-  color: #000;
-  font-weight: bold;
+function changeNotation(val) {
+  game.settings.notation = val;
+  updateUI(0);
 }
 
-/* =========================================
-   Generator List
-   ========================================= */
-#generator-container {
-  flex: 1;
-  overflow-y: auto;
-  padding-right: 5px;
-}
-#generator-container::-webkit-scrollbar { width: 6px; }
-#generator-container::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-#generator-container::-webkit-scrollbar-track { background: #111; }
-
-.generator-row {
-  background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
-  border-left: 3px solid var(--border-color);
-  margin-bottom: 8px;
-  padding: 10px 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: 0.2s;
-}
-.generator-row:hover {
-  background: rgba(255,255,255,0.06);
-  border-left-color: var(--accent-color);
+function buyGenerator(index) {
+  const gen = game.generators[index];
+  const amountToBuy = game.settings.buyAmount;
+  const cost = getBulkCost(gen, amountToBuy);
+  if (game.particles >= cost) {
+    game.particles -= cost;
+    gen.amount += amountToBuy;
+    gen.bought += amountToBuy;
+    gen.production *= Math.pow(1.1, amountToBuy);
+    updateUI(0);
+  }
 }
 
-.gen-info { flex-grow: 1; }
-.gen-name { font-size: 1rem; font-weight: bold; color: #ddd; display: flex; align-items: center; }
-.gen-amount { color: var(--text-sub); font-size: 0.85rem; margin-top: 2px; }
-.gen-multiplier { color: var(--accent-color); font-size: 0.85rem; }
-
-.auto-badge {
-  display: inline-block;
-  font-size: 0.65rem;
-  padding: 3px 8px;
-  border-radius: 4px;
-  background: #222;
-  color: #555;
-  margin-left: 10px;
-  border: 1px solid #333;
-  transition: all 0.2s;
-  font-weight: normal;
-  cursor: default;
-  user-select: none;
-}
-.auto-badge.clickable { cursor: pointer; border-color: #666; background: #2a2a2a; color: #aaa; }
-.auto-badge.clickable:hover { background: #333; color: #fff; }
-.auto-badge.active { background: rgba(0, 230, 118, 0.15); color: var(--accent-color); border-color: var(--accent-color); font-weight: bold; }
-.auto-badge.inactive { background: rgba(255, 68, 68, 0.1); color: #ff5252; border-color: #d32f2f; }
-
-/* =========================================
-   Buttons
-   ========================================= */
-.btn-group { display: flex; flex-direction: column; gap: 5px; min-width: 140px; }
-
-button { font-family: var(--font-mono); outline: none; cursor: pointer; user-select: none; }
-
-.buy-btn {
-  background-color: transparent;
-  border: 1px solid var(--accent-color);
-  color: var(--accent-color);
-  padding: 5px 10px;
-  border-radius: 2px;
-  text-align: center;
-  font-weight: bold;
-  transition: all 0.1s;
-  font-size: 0.8rem;
-}
-.buy-btn:hover { background-color: var(--accent-color); color: #000; box-shadow: 0 0 8px var(--accent-color); }
-.buy-btn.max { border-color: #29b6f6; color: #29b6f6; }
-.buy-btn.max:hover { background-color: #29b6f6; color: #000; box-shadow: 0 0 8px #29b6f6; }
-.buy-btn.disabled { border-color: #444; color: #555; background-color: transparent; cursor: default; box-shadow: none; pointer-events: none; }
-
-/* =========================================
-   Prestige Banner
-   ========================================= */
-.prestige-banner {
-  margin-bottom: 15px;
-  padding: 10px;
-  background: linear-gradient(45deg, #2c2c00, #443300);
-  border: 1px solid #ffd700;
-  border-radius: 4px;
-  text-align: center;
-  animation: pulseBorder 3s infinite;
-}
-@keyframes pulseBorder {
-  0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.2); }
-  50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
-  100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.2); }
+function buyMaxGenerator(index) {
+  const gen = game.generators[index];
+  let count = 0;
+  for(let i=0; i<100; i++){
+    const cost = getCost(gen);
+    if (game.particles >= cost) {
+      game.particles -= cost;
+      gen.amount++;
+      gen.bought++;
+      gen.production *= 1.1;
+      count++;
+    } else {
+      break;
+    }
+  }
+  if (count > 0) updateUI(0);
 }
 
-.prestige-info { color: #ffd700; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold; }
+// 通常のリセット（ライナック）
+function doLinac() {
+  const req = getLinacReq();
+  if (game.generators[7].amount < req) return;
+  const currentBase = getLinacBaseMult();
+  
+  if (!confirm(`ライナックを実行しますか？\nベース倍率: ${format(currentBase)}倍\n現在のライナック数: ${game.linacs} -> ${game.linacs+1}`)) return;
 
-.prestige-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
+  game.linacs = (game.linacs || 0) + 1;
+  game.stats.totalLinacs = (game.stats.totalLinacs || 0) + 1;
+  
+  // リセット処理
+  game.particles = 10;
+  game.generators.forEach(gen => {
+    gen.amount = 0;
+    gen.bought = 0;
+    gen.production = 1; 
+  });
+
+  saveGame();
+  updateUI(0);
 }
 
-.prestige-btn {
-  flex: 1;
-  background: linear-gradient(to bottom, #ffd700, #ffa000);
-  color: #000;
-  border: none;
-  padding: 8px 10px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  border-radius: 3px;
-  cursor: pointer;
-}
-.prestige-btn:hover { filter: brightness(1.1); }
+// 上位リセット（シフト）
+function doLinacShift() {
+  const shiftReq = getShiftReq();
+  if ((game.linacs || 0) < shiftReq) return;
 
-/* シフト用の特別ボタンスタイル */
-.prestige-btn.shift-btn {
-  background: linear-gradient(to bottom, #00e5ff, #00b8d4);
-  border: 2px solid #fff;
-  box-shadow: 0 0 15px var(--shift-color);
-  animation: pulseCyan 2s infinite;
-}
-@keyframes pulseCyan {
-  0% { box-shadow: 0 0 5px var(--shift-color); }
-  50% { box-shadow: 0 0 20px var(--shift-color); }
-  100% { box-shadow: 0 0 5px var(--shift-color); }
-}
+  const currentBase = getLinacBaseMult();
+  const nextBase = currentBase + 0.2;
 
-/* =========================================
-   Sidebar
-   ========================================= */
-.sidebar {
-  width: 320px;
-  background-color: var(--sidebar-bg);
-  border-left: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 10;
-  flex-shrink: 0;
-}
-.app-wrapper.closed .sidebar { margin-right: -320px; }
+  if (!confirm(`【警告】ライナック・シフトを実行しますか？\n\n失うもの:\n- 全ての粒子\n- 全てのAccelerator\n- 現在のライナック数 (${game.linacs}回)\n\n得られるもの:\n- ライナック倍率強化 (${format(currentBase)} -> ${format(nextBase)})\n\n`)) return;
 
-.sidebar-header { display: flex; height: 45px; background: #111; border-bottom: 1px solid var(--border-color); }
-.tab-container { flex: 1; display: flex; }
-.tab-btn { flex: 1; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-sub); font-weight: bold; font-size: 0.9rem; }
-.tab-btn.active { color: var(--accent-color); border-bottom-color: var(--accent-color); }
-.close-btn { width: 45px; background: transparent; border: none; color: #666; border-left: 1px solid #222; }
+  game.shifts = (game.shifts || 0) + 1;
+  
+  // シフト時はライナック数も0に戻る
+  game.linacs = 0;
+  game.particles = 10;
+  
+  game.generators.forEach(gen => {
+    gen.amount = 0;
+    gen.bought = 0;
+    gen.production = 1; 
+  });
 
-.sidebar-body { padding: 15px; flex: 1; overflow-y: auto; }
-.sidebar-content { display: none; }
-.sidebar-content.active { display: block; animation: fadeIn 0.2s; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-.sidebar h3 { margin-top: 0; font-size: 0.8rem; color: var(--text-sub); border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 15px; }
-.stat-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 3px; }
-.stat-label { color: #888; font-size: 0.8rem; }
-.stat-val { color: #fff; font-weight: bold; font-size: 0.9rem; }
-
-.ui-btn { width: 100%; padding: 10px; border: none; border-radius: 3px; font-weight: bold; margin-bottom: 10px; }
-.ui-btn.primary { background: #333; color: #fff; border: 1px solid #555; }
-.ui-btn.primary:hover { background: #444; border-color: #777; }
-.ui-btn.secondary { background: #222; color: #ccc; border: 1px solid #444; }
-.ui-btn.secondary:hover { background: #333; color: #fff; }
-.ui-btn.danger { background: var(--danger-color); color: white; }
-.ui-btn.danger:hover { background: #d32f2f; }
-
-.select-wrapper select { width: 100%; padding: 8px; background: #222; color: #fff; border: 1px solid #444; border-radius: 3px; }
-.danger-zone { margin-top: 30px; border: 1px solid var(--danger-color); padding: 10px; background: rgba(255,68,68,0.05); }
-.status-text { text-align: center; font-size: 0.75rem; color: #555; }
-.sidebar-footer { text-align: center; padding: 10px; color: #444; font-size: 0.7rem; border-top: 1px solid #222; }
-
-.float-menu-btn {
-  position: absolute; top: 15px; right: 15px;
-  background: #222; color: #fff; border: 1px solid #444;
-  padding: 8px 15px; border-radius: 20px; font-weight: bold; z-index: 100;
-  display: none;
-}
-.float-menu-btn:hover { background: #333; }
-.app-wrapper.closed .float-menu-btn { display: block; }
-
-/* =========================================
-   Effects
-   ========================================= */
-.glitch-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  pointer-events: none; z-index: 999; opacity: 0;
-  mix-blend-mode: exclusion; background: transparent; transition: opacity 0.5s;
-}
-body.glitched .glitch-overlay { background: rgba(255, 0, 0, 0.02); animation: noise 0.2s infinite; }
-body.glitched h1, body.glitched h2, body.glitched .generator-row {
-  animation: glitch-skew 0.3s infinite steps(2); text-shadow: 2px 0 #ff0000, -2px 0 #0000ff;
-}
-@keyframes noise {
-  0% { transform: translate(0,0); }
-  10% { transform: translate(-5px,5px); }
-  50% { transform: translate(-5px,5px); }
-  100% { transform: translate(0,0); }
-}
-@keyframes glitch-skew {
-  0% { transform: skew(0deg); }
-  20% { transform: skew(-2deg); }
-  40% { transform: skew(2deg); }
-  100% { transform: skew(0deg); }
+  saveGame();
+  updateUI(0);
+  alert(`シフト完了！\n現在のライナック倍率が ${format(nextBase)}倍 になりました。`);
 }
 
-.crunch-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: white; z-index: 10000; display: flex;
-  align-items: center; justify-content: center; flex-direction: column;
-  animation: implode 4s forwards;
-}
-.crunch-message { text-align: center; color: black; opacity: 0; animation: fadeInText 2s 1.5s forwards; }
-.crunch-message h1 { font-size: 3rem; letter-spacing: 10px; margin: 0; color: #000; }
-.crunch-message p { color: #333; font-size: 1.2rem; }
+// --- UI更新 ---
+function updateUI(pps) {
+  const pDisplay = document.getElementById('particle-display');
+  if(pDisplay) pDisplay.textContent = `${format(game.particles)} 粒子`;
+  
+  const ppsDisplay = document.getElementById('pps-display');
+  if(ppsDisplay) ppsDisplay.textContent = `(+${format(pps)} /秒)`;
 
-@keyframes implode {
-  0% { background: rgba(255,255,255,0); transform: scale(1); }
-  10% { background: rgba(255,255,255,1); transform: scale(1); }
-  90% { background: rgba(0,0,0,1); transform: scale(1); }
-  100% { background: #000; }
+  // Infinity Point 表示
+  const ipContainer = document.getElementById('ip-display-container');
+  if (ipContainer) {
+    if (game.infinity && game.infinity.ip > 0) {
+      ipContainer.style.display = 'block';
+      document.getElementById('ip-val').textContent = game.infinity.ip;
+    } else {
+      ipContainer.style.display = 'none';
+    }
+  }
+
+  // シフト情報バー
+  const shiftStatusBar = document.getElementById('shift-status');
+  if (shiftStatusBar) {
+      if ((game.shifts || 0) > 0) {
+          shiftStatusBar.style.display = 'block';
+          const baseMult = getLinacBaseMult();
+          document.getElementById('shift-mult-display').textContent = `x${format(baseMult)}`;
+          document.getElementById('shift-count').textContent = game.shifts || 0;
+      } else {
+          shiftStatusBar.style.display = 'none';
+      }
+  }
+
+  // プレステージ/シフトバナー
+  const linacReq = getLinacReq();
+  const shiftReq = getShiftReq();
+  const pContainer = document.getElementById('prestige-container');
+  const baseMult = getLinacBaseMult();
+
+  if (pContainer) {
+    // 条件を満たしていれば表示
+    if (game.generators[7].amount >= linacReq || game.linacs >= shiftReq) {
+        pContainer.style.display = 'block';
+        
+        const linacCountEl = document.getElementById('current-linac-count');
+        if(linacCountEl) linacCountEl.textContent = game.linacs || 0;
+        
+        const nextShiftEl = document.getElementById('next-shift-req');
+        if(nextShiftEl) nextShiftEl.textContent = shiftReq;
+
+        // ライナックボタン
+        const btnLinac = document.getElementById('btn-linac');
+        if (btnLinac) {
+            if (game.generators[7].amount >= linacReq) {
+                btnLinac.classList.remove('disabled');
+                btnLinac.innerHTML = `<strong>ライナックを実行</strong><br><span style="font-size:0.8em;">生産倍率 x${format(baseMult)} & リセット (Mk.8: ${linacReq}個消費)</span>`;
+                btnLinac.onclick = doLinac;
+            } else {
+                btnLinac.classList.add('disabled');
+                btnLinac.innerHTML = `<strong>ライナック未到達</strong><br><span style="font-size:0.8em;">Mk.8 が ${linacReq}個 必要</span>`;
+                btnLinac.onclick = null;
+            }
+        }
+
+        // シフトボタン
+        const btnShift = document.getElementById('btn-shift');
+        if (btnShift) {
+            if (game.linacs >= shiftReq) {
+                btnShift.style.display = 'inline-block';
+                const nextBase = baseMult + 0.2;
+                btnShift.innerHTML = `<strong>ライナック・シフト</strong><br><span style="font-size:0.8em;">ライナック倍率 ${format(baseMult)} → ${format(nextBase)}</span>`;
+            } else {
+                btnShift.style.display = 'none';
+            }
+        }
+
+    } else {
+        pContainer.style.display = 'none';
+    }
+  }
+
+  // ジェネレーター一覧更新
+  game.generators.forEach((gen, index) => {
+    const btn = document.getElementById(`btn-${index}`);
+    const btnMax = document.getElementById(`btn-max-${index}`);
+    if (!btn) return;
+
+    const buyAmt = game.settings.buyAmount;
+    const cost = getBulkCost(gen, buyAmt);
+    
+    const autoBadge = document.getElementById(`auto-badge-${index}`);
+    const threshold = Number('1e' + (50 + index * 10));
+    
+    if (autoBadge) {
+      autoBadge.className = 'auto-badge';
+      autoBadge.onclick = null;
+      if (gen.autoUnlocked) {
+        autoBadge.classList.add('clickable');
+        autoBadge.onclick = () => toggleAutobuyer(index);
+        if (gen.autoActive) {
+            autoBadge.classList.add('active');
+            autoBadge.textContent = "AUTO: ON";
+        } else {
+            autoBadge.classList.add('inactive');
+            autoBadge.textContent = "AUTO: OFF";
+        }
+      } else {
+        autoBadge.textContent = `Req: ${format(threshold)}`;
+      }
+    }
+
+    document.getElementById(`amount-${index}`).textContent = `所持: ${format(gen.amount)}`;
+    document.getElementById(`mult-${index}`).textContent = `x${format(gen.production * getGlobalMultiplier())}`;
+    
+    btn.textContent = `${buyAmt}個: ${format(cost)}`;
+    
+    if (game.particles >= cost) btn.classList.remove('disabled');
+    else btn.classList.add('disabled');
+    
+    if (game.particles >= getCost(gen)) btnMax.classList.remove('disabled');
+    else btnMax.classList.add('disabled');
+  });
 }
-@keyframes fadeInText {
-  0% { opacity: 0; transform: scale(2); filter: blur(10px); }
-  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+
+function updateStats() {
+  const elapsed = (Date.now() - game.stats.startTime) / 1000;
+  document.getElementById('stat-time').textContent = formatTime(elapsed);
+  document.getElementById('stat-total').textContent = format(game.stats.totalParticles);
+
+  const statPrestige = document.getElementById('stat-prestige');
+  const rowPrestige = document.getElementById('row-prestige');
+  if (game.stats.totalLinacs > 0 && statPrestige && rowPrestige) {
+    rowPrestige.style.display = 'flex';
+    statPrestige.textContent = `${game.stats.totalLinacs} 回`;
+  }
+  
+  const statShift = document.getElementById('stat-shift');
+  const rowShift = document.getElementById('row-shift');
+  if (game.shifts > 0 && statShift && rowShift) {
+    rowShift.style.display = 'flex';
+    statShift.textContent = `${game.shifts} 回`;
+  }
+
+  if (game.infinity && game.infinity.crunchCount > 0) {
+    const infStats = document.getElementById('infinity-stats');
+    if(infStats) infStats.style.display = 'block';
+    document.getElementById('stat-crunch').textContent = `${game.infinity.crunchCount} 回`;
+    document.getElementById('stat-best-inf').textContent = formatTime(game.infinity.bestTime / 1000);
+  }
 }
+
+function updateGlitchEffect() {
+  const overlay = document.getElementById('glitch-layer');
+  if (!overlay) return;
+  
+  if (game.particles < 1e250) {
+    document.body.classList.remove('glitched');
+    overlay.style.opacity = 0;
+    return;
+  }
+  const logP = Math.log10(game.particles);
+  const intensity = (logP - 250) / (308 - 250); 
+  if (intensity > 0) {
+    document.body.classList.add('glitched');
+    overlay.style.opacity = intensity * 0.8;
+  }
+}
+
+// --- ビッグ・クランチ（修正版：リロードなし & IP加算修正） ---
+function triggerBigCrunch() {
+  const currentTime = Date.now() - game.stats.startTime;
+  
+  // Infinityオブジェクト初期化（念のため）
+  if (!game.infinity) game.infinity = { ip:0, crunchCount:0, bestTime:null };
+  
+  // ポイント加算 (リセット前に確実に加算)
+  game.infinity.ip = (game.infinity.ip || 0) + 1;
+  game.infinity.crunchCount = (game.infinity.crunchCount || 0) + 1;
+  
+  if (game.infinity.bestTime === null || currentTime < game.infinity.bestTime) {
+    game.infinity.bestTime = currentTime;
+  }
+  
+  // ユーザー操作ブロック
+  isCrunching = true;
+
+  const overlay = document.getElementById('crunch-overlay');
+  if(overlay) overlay.style.display = 'flex';
+  
+  // 演出時間待機後にリセット
+  setTimeout(() => {
+    performInfinityReset();
+  }, 4000);
+}
+
+function performInfinityReset() {
+  // 1. 引き継ぐデータ（Infinity情報と設定）をディープコピーで退避
+  const savedInfinity = JSON.parse(JSON.stringify(game.infinity));
+  const savedSettings = JSON.parse(JSON.stringify(game.settings));
+  
+  // 2. ゲーム全体を初期状態にする（新しいオブジェクトを作成）
+  // これでParticles, Linacs, Shifts, Generatorsなどは全て初期化される
+  const freshState = getInitialState();
+  
+  // 3. グローバルな game 変数を新しい状態に置き換える
+  game = freshState;
+  
+  // 4. 退避しておいたデータを新しい状態に戻す
+  game.infinity = savedInfinity;
+  game.settings = savedSettings;
+  
+  // 5. 状態フラグのリセット
+  isCrunching = false; 
+  
+  // 6. UIの強制更新
+  const overlay = document.getElementById('crunch-overlay');
+  if(overlay) overlay.style.display = 'none';
+  
+  updateUI(0);      // 表示数値を0に
+  updateStats();    // 統計時間の表示リセット
+  
+  // 7. 新しい状態でセーブ
+  saveGame();
+  
+  // ※ location.reload() は削除しました
+  
+  // ゲームループは requestAnimationFrame で再帰しているので、
+  // game変数が置き換わった次のフレームから新しい状態で動作します。
+}
+
+// --- セーブ・ロード ---
+function saveGame(isAuto = false) {
+  if(isCrunching) return; 
+  
+  game.lastTick = Date.now();
+  localStorage.setItem(SAVE_KEY, JSON.stringify(game));
+  
+  if (!isAuto) {
+    const s = document.getElementById('save-status');
+    if(s) {
+        s.textContent = "保存しました";
+        setTimeout(() => s.textContent = "オートセーブ有効 (10秒毎)", 2000);
+    }
+  }
+}
+
+function loadGame() {
+  const data = localStorage.getItem(SAVE_KEY);
+  if (data) {
+    try {
+      const parsed = JSON.parse(data);
+      const fresh = getInitialState();
+      
+      let loadedLinacs = parsed.linacs || 0;
+      let loadedShifts = parsed.shifts || 0;
+      let loadedStats = { ...fresh.stats, ...(parsed.stats || {}) };
+      
+      game = { ...fresh, ...parsed };
+      game.linacs = loadedLinacs;
+      game.shifts = loadedShifts;
+      game.stats = loadedStats;
+      game.infinity = { ...fresh.infinity, ...(parsed.infinity || {}) };
+      game.settings = { ...fresh.settings, ...(parsed.settings || {}) };
+      
+      if (parsed.generators) {
+        game.generators = parsed.generators.map((g, i) => {
+            const freshGen = fresh.generators[i];
+            return { 
+                ...freshGen, 
+                ...g,
+                autoUnlocked: g.autoUnlocked !== undefined ? g.autoUnlocked : freshGen.autoUnlocked,
+                autoActive: g.autoActive !== undefined ? g.autoActive : freshGen.autoActive
+            };
+        });
+      }
+      
+      const notSel = document.getElementById('notation-select');
+      if(notSel) notSel.value = game.settings.notation;
+      setBuyAmount(game.settings.buyAmount);
+
+    } catch(e) {
+      console.error("Save Load Error:", e);
+    }
+  }
+}
+
+function hardReset() {
+    if(confirm("本当に全てのデータを消去しますか？（元に戻せません）")) {
+        localStorage.removeItem(SAVE_KEY);
+        location.reload();
+    }
+}
+
+function exportSave() {
+    saveGame(true);
+    const str = btoa(JSON.stringify(game));
+    const area = document.getElementById('save-textarea');
+    document.getElementById('io-area').style.display = 'block';
+    area.value = str;
+}
+
+function importSave() { document.getElementById('io-area').style.display = 'block'; }
+
+function confirmImport() {
+    const str = document.getElementById('save-textarea').value.trim();
+    try {
+        const decoded = atob(str);
+        JSON.parse(decoded);
+        localStorage.setItem(SAVE_KEY, decoded);
+        location.reload();
+    } catch(e) { alert("データが無効です"); }
+}
+
+function toggleSidebar() { 
+    const el = document.getElementById('app-wrapper');
+    if(el) el.classList.toggle('closed');
+}
+
+function switchTab(name, btn) {
+    document.querySelectorAll('.sidebar-content').forEach(c => c.classList.remove('active'));
+    const tab = document.getElementById(`tab-${name}`);
+    if(tab) tab.classList.add('active');
+    
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+// --- 初期化 ---
+function init() {
+  const container = document.getElementById('generator-container');
+  if(container) {
+      container.innerHTML = '';
+      getInitialState().generators.forEach((gen, index) => {
+        const row = document.createElement('div');
+        row.className = 'generator-row';
+        row.innerHTML = `
+          <div class="gen-info">
+            <div class="gen-name">
+              ${gen.name} 
+              <span id="auto-badge-${index}" class="auto-badge">Req: 1e${50 + index*10}</span>
+            </div>
+            <div class="gen-amount" id="amount-${index}">0</div>
+            <div class="gen-multiplier" id="mult-${index}">x1.00</div>
+          </div>
+          <div class="btn-group">
+            <button id="btn-${index}" class="buy-btn" onclick="buyGenerator(${index})">
+              1個購入
+            </button>
+            <button id="btn-max-${index}" class="buy-btn max" onclick="buyMaxGenerator(${index})">
+              Buy Max
+            </button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+  }
+
+  loadGame();
+  gameLoop();
+}
+
+init();
