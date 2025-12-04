@@ -1,7 +1,6 @@
 /**
- * the-Particle Shift Update v2.3.1 (Bug Fix)
- * - NaN対策とセーブデータ移行の強化
- * - HTML要素不足時のクラッシュ防止
+ * the-Particle Shift Update v2.3.1
+ * - Hide Shift Stats until first Shift
  */
 
 const SAVE_KEY = 'theParticle_Shift_v2_3';
@@ -14,12 +13,12 @@ const UNITS_JP = ['', '万', '億', '兆', '京', '垓', '𥝱', '穣', '溝', '
 function getInitialState() {
   return {
     particles: 10,
-    linacs: 0, // 現在の周回のライナック数
-    shifts: 0, // シフト回数
+    linacs: 0, 
+    shifts: 0, 
     
     stats: {
       totalParticles: 10,
-      totalLinacs: 0, // 通算ライナック数
+      totalLinacs: 0,
       startTime: Date.now(),
     },
     
@@ -55,7 +54,7 @@ let isCrunching = false;
 
 // --- ユーティリティ ---
 function format(num) {
-  if (num === undefined || num === null || isNaN(num)) return "0.00"; // NaN対策
+  if (num === undefined || num === null || isNaN(num)) return "0.00";
   if (!isFinite(num)) return "Infinity";
   if (num < 1000) return num.toFixed(2);
   
@@ -106,7 +105,6 @@ function getCost(gen) {
 }
 
 function getLinacBaseMult() {
-  // game.shifts が NaN の場合は 0 として扱う
   const s = game.shifts || 0;
   return 1.2 + (s * 0.2);
 }
@@ -136,7 +134,6 @@ function gameLoop() {
   if (dt > 1) dt = 1; 
   game.lastTick = now;
 
-  // NaNチェックと修復（バグ回避）
   if (isNaN(game.particles)) game.particles = 10;
   
   if (game.particles >= INFINITY_LIMIT) {
@@ -319,21 +316,28 @@ function updateUI(pps) {
     document.getElementById('ip-val').textContent = game.infinity.ip;
   }
 
-  // シフト情報
-  const baseMult = getLinacBaseMult();
-  const shiftMultDisplay = document.getElementById('shift-mult-display');
-  if (shiftMultDisplay) shiftMultDisplay.textContent = `x${format(baseMult)}`;
-  
-  const shiftCountDisplay = document.getElementById('shift-count');
-  if (shiftCountDisplay) shiftCountDisplay.textContent = game.shifts || 0;
+  // --- シフト情報バーの表示制御 (NEW) ---
+  const shiftStatusBar = document.getElementById('shift-status');
+  if (shiftStatusBar) {
+      // シフト回数が1回以上の場合のみ表示
+      if ((game.shifts || 0) > 0) {
+          shiftStatusBar.style.display = 'block';
+          const baseMult = getLinacBaseMult();
+          document.getElementById('shift-mult-display').textContent = `x${format(baseMult)}`;
+          document.getElementById('shift-count').textContent = game.shifts || 0;
+      } else {
+          shiftStatusBar.style.display = 'none';
+      }
+  }
+  // ----------------------------------
 
   // プレステージ/シフトバナー
   const linacReq = getLinacReq();
   const shiftReq = getShiftReq();
   const pContainer = document.getElementById('prestige-container');
-  
+  const baseMult = getLinacBaseMult();
+
   if (pContainer) {
-    // Mk.8の数が足りているか、またはシフト条件を満たしている場合表示
     if (game.generators[7].amount >= linacReq || game.linacs >= shiftReq) {
         pContainer.style.display = 'block';
         
@@ -526,10 +530,6 @@ function loadGame() {
       const parsed = JSON.parse(data);
       const fresh = getInitialState();
       
-      // --- データ移行ロジック (古い変数から新しい変数へ) ---
-      
-      // 1. linacs (現在周回数) の復旧
-      // 古いセーブデータで 'linacs' がない場合、'stats.prestigeCount' を使用する
       let loadedLinacs = 0;
       if (parsed.linacs !== undefined) {
           loadedLinacs = parsed.linacs;
@@ -538,22 +538,18 @@ function loadGame() {
       }
       if (isNaN(loadedLinacs)) loadedLinacs = 0;
 
-      // 2. shifts の復旧
       let loadedShifts = parsed.shifts || 0;
       if (isNaN(loadedShifts)) loadedShifts = 0;
 
-      // 3. statsの復旧
       let loadedStats = { ...fresh.stats, ...(parsed.stats || {}) };
-      // 古い prestigeCount を totalLinacs に統合
       if (loadedStats.totalLinacs === undefined || isNaN(loadedStats.totalLinacs)) {
           if (parsed.stats && parsed.stats.prestigeCount) {
               loadedStats.totalLinacs = parsed.stats.prestigeCount;
           } else {
-              loadedStats.totalLinacs = loadedLinacs; // 最低でも現在の周回数分はあるはず
+              loadedStats.totalLinacs = loadedLinacs; 
           }
       }
 
-      // --- 適用 ---
       game = { ...fresh, ...parsed };
       game.linacs = loadedLinacs;
       game.shifts = loadedShifts;
@@ -561,7 +557,6 @@ function loadGame() {
       game.infinity = { ...fresh.infinity, ...(parsed.infinity || {}) };
       game.settings = { ...fresh.settings, ...(parsed.settings || {}) };
       
-      // ジェネレーターの復旧
       if (parsed.generators) {
         game.generators = parsed.generators.map((g, i) => {
             const freshGen = fresh.generators[i];
@@ -580,7 +575,6 @@ function loadGame() {
 
     } catch(e) {
       console.error("Save Load Error:", e);
-      // 致命的なエラーならリセットを促すなどの処理を入れるが、一旦初期状態で開始
     }
   }
 }
