@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>the-Particle v3.1</title>
+  <title>the-Particle v3.3</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- 背景エフェクトレイヤー -->
+  <!-- 背景エフェクト -->
   <div id="bg-grid"></div>
   <div id="glitch-layer" class="glitch-overlay"></div>
   
-  <!-- ニュースティッカー (上部固定) -->
+  <!-- ニュースティッカー -->
   <div class="news-ticker-container">
     <div class="news-label">NEWS</div>
     <div class="news-viewport">
@@ -25,7 +25,7 @@
     <!-- メインパネル -->
     <main class="game-panel">
       <header>
-        <h1>the-Particle <span style="font-size:0.5em; color:var(--accent-color);">v3.1</span></h1>
+        <h1>the-Particle <span style="font-size:0.5em; color:var(--accent-color);">v3.3</span></h1>
         
         <!-- 進捗バーセクション -->
         <div class="progress-section">
@@ -42,10 +42,11 @@
         </div>
 
         <div class="currency-container">
-          <h2 id="particle-display">0 粒子</h2>
+          <h2 id="particle-display">0.00 粒子</h2>
           <p id="pps-display">(+0.00 /秒)</p>
         </div>
         
+        <!-- Infinity Point 表示（条件付き） -->
         <div id="ip-display-container" style="display:none;">
           Infinity Points: <span id="ip-val">0</span>
         </div>
@@ -53,7 +54,7 @@
 
       <!-- シフト情報 -->
       <div id="shift-status" class="shift-bar" style="display: none;">
-        現在のライナック倍率: <span id="shift-mult-display">x1.2</span>
+        現在のライナック倍率: <span id="shift-mult-display">x1.20</span>
         <span style="font-size:0.8em; color:#888; margin-left:10px;">(シフト回数: <span id="shift-count">0</span>)</span>
       </div>
 
@@ -84,13 +85,11 @@
             <button class="toggle-btn" onclick="setBuyAmount(100)" id="buy-100">x100</button>
           </div>
         </div>
-        <button class="buy-btn max-all-btn" onclick="buyMaxAll()">MAX ALL [M]</button>
+        <button class="max-all-btn" onclick="buyMaxAll()">MAX ALL [M]</button>
       </div>
 
-      <!-- ジェネレーターリスト -->
-      <div id="generator-container">
-        <!-- JSで生成 -->
-      </div>
+      <!-- ジェネレーターリスト (JSで生成) -->
+      <div id="generator-container"></div>
 
       <button id="sidebar-open-btn" class="float-menu-btn" onclick="toggleSidebar()">⚙ MENU</button>
     </main>
@@ -109,8 +108,8 @@
         <!-- 統計タブ -->
         <div id="tab-stats" class="sidebar-content active">
           <h3>STATISTICS</h3>
-          <div class="stat-row"><span class="stat-label">プレイ時間</span><span id="stat-time" class="stat-val">00:00:00</span></div>
-          <div class="stat-row"><span class="stat-label">総生産粒子</span><span id="stat-total" class="stat-val">0</span></div>
+          <div class="stat-row"><span class="stat-label">プレイ時間</span><span id="stat-time" class="stat-val">0:00:00</span></div>
+          <div class="stat-row"><span class="stat-label">総生産粒子</span><span id="stat-total" class="stat-val">0.00</span></div>
           <div class="stat-row" id="row-prestige" style="display:none;"><span class="stat-label">ライナック回数</span><span id="stat-prestige" class="stat-val">0</span></div>
           
           <div id="infinity-stats" style="display:none; margin-top:20px; border-top:1px dashed #555; padding-top:10px;">
@@ -158,11 +157,11 @@
           </div>
         </div>
       </div>
-      <div class="sidebar-footer">ver 3.1.0 Quantum Loop</div>
+      <div class="sidebar-footer">ver 3.3.0 Final Integration</div>
     </aside>
   </div>
 
-  <!-- カスタムモーダル (Alert/Confirm代替) -->
+  <!-- モーダル類 -->
   <div id="custom-modal-overlay" class="modal-overlay" style="display:none;">
     <div class="modal-box">
       <h3 id="modal-title">TITLE</h3>
@@ -171,10 +170,8 @@
     </div>
   </div>
 
-  <!-- トースト通知エリア -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- ビッグ・クランチ演出 -->
   <div id="crunch-overlay" class="crunch-overlay" style="display: none;">
     <div class="crunch-message">
       <h1>UNIVERSE COLLAPSED</h1>
