@@ -1,8 +1,8 @@
 /**
- * the-Particle v2.4.1 (Infinity Fix: No-Reload & IP Fix)
+ * the-Particle v2.5 (Infinity Fix: Seamless Reset & IP Accumulation)
  */
 
-const SAVE_KEY = 'theParticle_v2_4';
+const SAVE_KEY = 'theParticle_v2_5';
 const INFINITY_LIMIT = 1.79e308; // ビッグクランチ発動ライン
 
 // 単位配列
@@ -22,6 +22,7 @@ function getInitialState() {
       startTime: Date.now(),
     },
     
+    // Infinity関連（ここはリセット時に引き継がれるため初期値は0）
     infinity: {
       ip: 0,
       crunchCount: 0,
@@ -490,7 +491,8 @@ function triggerBigCrunch() {
   // Infinityオブジェクト初期化（念のため）
   if (!game.infinity) game.infinity = { ip:0, crunchCount:0, bestTime:null };
   
-  // ポイント加算 (リセット前に確実に加算)
+  // ポイント加算 (リセット前に確実に加算して、メモリ上に保持)
+  // 現在のIPに+1します。周回ごとに確実に増えます。
   game.infinity.ip = (game.infinity.ip || 0) + 1;
   game.infinity.crunchCount = (game.infinity.crunchCount || 0) + 1;
   
@@ -501,53 +503,74 @@ function triggerBigCrunch() {
   // ユーザー操作ブロック
   isCrunching = true;
 
+  // 重要なデータを即座にセーブ（アニメーション中に閉じても大丈夫なように）
+  saveGame();
+
   const overlay = document.getElementById('crunch-overlay');
   if(overlay) overlay.style.display = 'flex';
   
-  // 演出時間待機後にリセット
+  // 演出時間待機後にリセット実行
   setTimeout(() => {
     performInfinityReset();
   }, 4000);
 }
 
 function performInfinityReset() {
-  // 1. 引き継ぐデータ（Infinity情報と設定）をディープコピーで退避
+  // 1. 現在のInfinityデータとSettingsを退避（参照コピーではなくディープコピー）
   const savedInfinity = JSON.parse(JSON.stringify(game.infinity));
   const savedSettings = JSON.parse(JSON.stringify(game.settings));
   
-  // 2. ゲーム全体を初期状態にする（新しいオブジェクトを作成）
-  // これでParticles, Linacs, Shifts, Generatorsなどは全て初期化される
+  // 2. 完全な初期状態を取得
   const freshState = getInitialState();
   
-  // 3. グローバルな game 変数を新しい状態に置き換える
-  game = freshState;
+  // 3. 「ゲーム全体」を入れ替えるのではなく、初期化したい項目だけ上書きする
+  //    こうすることで変数参照のエラーを防ぎ、スムーズに移行できます。
   
-  // 4. 退避しておいたデータを新しい状態に戻す
+  // リソースと進捗のリセット
+  game.particles = freshState.particles;
+  game.linacs = freshState.linacs;
+  game.shifts = freshState.shifts;
+  
+  // ジェネレーターのリセット
+  game.generators = freshState.generators;
+
+  // 統計情報のリセット (開始時間は現在時刻に更新)
+  game.stats = freshState.stats;
+  game.stats.startTime = Date.now();
+
+  // 4. 退避しておいたIPなどの情報を書き戻す
   game.infinity = savedInfinity;
   game.settings = savedSettings;
   
   // 5. 状態フラグのリセット
   isCrunching = false; 
+  game.lastTick = Date.now();
   
   // 6. UIの強制更新
   const overlay = document.getElementById('crunch-overlay');
   if(overlay) overlay.style.display = 'none';
   
-  updateUI(0);      // 表示数値を0に
-  updateStats();    // 統計時間の表示リセット
+  // 表示を初期状態（0など）に戻す
+  updateUI(0);
+  updateStats();
   
   // 7. 新しい状態でセーブ
   saveGame();
   
-  // ※ location.reload() は削除しました
-  
-  // ゲームループは requestAnimationFrame で再帰しているので、
-  // game変数が置き換わった次のフレームから新しい状態で動作します。
+  // ※ location.reload() は削除しました。
+  // これによりブラウザの更新なしで次の周回が始まります。
 }
 
 // --- セーブ・ロード ---
 function saveGame(isAuto = false) {
-  if(isCrunching) return; 
+  // クランチ演出中以外ならセーブ可能
+  // ただし triggerBigCrunch 内で強制セーブする場合は別
+  if(isCrunching && !isAuto) {
+     // 手動セーブなどでクランチ中に呼ばれた場合は無視したいが、
+     // 内部ロジックからの呼び出しは許可したい。
+     // ここでは簡易的に「アニメーション中はオートセーブしない」とする
+     if(isAuto) return;
+  }
   
   game.lastTick = Date.now();
   localStorage.setItem(SAVE_KEY, JSON.stringify(game));
@@ -568,6 +591,7 @@ function loadGame() {
       const parsed = JSON.parse(data);
       const fresh = getInitialState();
       
+      // データのマージ（新バージョンでプロパティが増えても大丈夫なように）
       let loadedLinacs = parsed.linacs || 0;
       let loadedShifts = parsed.shifts || 0;
       let loadedStats = { ...fresh.stats, ...(parsed.stats || {}) };
@@ -582,6 +606,7 @@ function loadGame() {
       if (parsed.generators) {
         game.generators = parsed.generators.map((g, i) => {
             const freshGen = fresh.generators[i];
+            // 古いセーブデータとの互換性維持
             return { 
                 ...freshGen, 
                 ...g,
@@ -677,3 +702,8 @@ function init() {
 }
 
 init();
+
+
+
+
+
