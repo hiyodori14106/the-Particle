@@ -1,14 +1,12 @@
 /**
- * the-Particle v3.3.0 - Final Integrated Version
- * - Auto Buyers Restored
- * - Fixed Number Formatting (.00)
- * - Sci-Fi UI Logic
+ * the-Particle v3.3.0
+ * Auto Buyers Active & No Jitter Number Format
  */
 
 const SAVE_KEY = 'theParticle_v3_final';
 const INFINITY_LIMIT = 1.79e308;
 
-// --- ニュースデータ ---
+// --- News Data ---
 const NEWS_MESSAGES = [
   { req: 0, text: "システム起動... 粒子生成プロセス、スタンバイ。" },
   { req: 50, text: "最初の粒子が観測されました。ちっぽけですが、偉大な一歩です。" },
@@ -30,29 +28,17 @@ const FILLER_NEWS = [
   "自動購入システムがあなたの財布を狙っています。"
 ];
 
-// --- 初期データ ---
+// --- Initial State ---
 function getInitialState() {
   return {
     particles: 10,
-    linacs: 0, 
-    shifts: 0, 
-    
+    linacs: 0, shifts: 0,
     stats: {
-      totalParticles: 10,
-      totalLinacs: 0,
-      startTime: Date.now(),
-      lastSaveTime: Date.now(),
+      totalParticles: 10, totalLinacs: 0,
+      startTime: Date.now(), lastSaveTime: Date.now()
     },
-    
     infinity: { ip: 0, crunchCount: 0 },
-
-    settings: {
-      notation: 'sci',
-      buyAmount: 1,
-      skipConfirm: false
-    },
-
-    // Auto機能用フラグ: autoUnlocked, autoActive
+    settings: { notation: 'sci', buyAmount: 1, skipConfirm: false },
     generators: [
       { id: 0, name: "Accelerator Mk.1", baseCost: 10,   costMult: 1.5, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: false },
       { id: 1, name: "Accelerator Mk.2", baseCost: 100,  costMult: 1.8, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: false },
@@ -80,46 +66,36 @@ const UI = {
     container.appendChild(el);
     setTimeout(() => { if(el.parentNode) el.parentNode.removeChild(el); }, 4000);
   },
-  
   modal: (title, body, actions = []) => {
     const overlay = document.getElementById('custom-modal-overlay');
     document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-body').innerHTML = body;
     const actContainer = document.getElementById('modal-actions');
     actContainer.innerHTML = '';
-    
     if(actions.length === 0) actions.push({ text: '閉じる', class: 'primary', onClick: null });
-
     actions.forEach(act => {
       const btn = document.createElement('button');
       btn.className = `ui-btn ${act.class || 'secondary'}`;
       btn.textContent = act.text;
-      btn.style.width = 'auto'; btn.style.padding = '8px 20px';
       btn.onclick = () => { if(act.onClick) act.onClick(); UI.closeModal(); };
       actContainer.appendChild(btn);
     });
     overlay.style.display = 'flex';
   },
-  
   closeModal: () => { document.getElementById('custom-modal-overlay').style.display = 'none'; },
-
   confirm: (title, body, onConfirm) => {
     if (game.settings.skipConfirm) { onConfirm(); return; }
-    UI.modal(title, body, [
-      { text: 'キャンセル', class: 'secondary' },
-      { text: '実行する', class: 'danger', onClick: onConfirm }
-    ]);
+    UI.modal(title, body, [{text:'キャンセル',class:'secondary'},{text:'実行',class:'danger',onClick:onConfirm}]);
   }
 };
 
-// --- 計算ロジック ---
+// --- Logic ---
 function getSumCost(gen, k) {
   const r = gen.costMult;
   const currentCost = gen.baseCost * Math.pow(r, gen.bought);
   if (r === 1) return currentCost * k;
   return currentCost * (Math.pow(r, k) - 1) / (r - 1);
 }
-
 function calcMaxAffordable(gen, budget) {
   const r = gen.costMult;
   const currentCost = gen.baseCost * Math.pow(r, gen.bought);
@@ -129,67 +105,51 @@ function calcMaxAffordable(gen, budget) {
   const k = Math.floor(Math.log(val) / Math.log(r));
   return k > 0 ? k : 0;
 }
-
 function getGlobalMultiplier() {
   const base = 1.2 + ((game.shifts || 0) * 0.2);
   return Math.pow(base, game.linacs || 0);
 }
 
-// --- Auto機能ロジック ---
+// --- Auto Logic ---
 function checkAutoUnlock() {
   game.generators.forEach((gen, i) => {
-    // 解放条件: 1e50, 1e60, ...
     const threshold = Number(`1e${50 + (i * 10)}`);
     if (!gen.autoUnlocked && game.particles >= threshold) {
       gen.autoUnlocked = true;
-      UI.toast(`<strong style="color:var(--accent-color)">${gen.name}</strong> のAUTO機能が解放されました！`);
+      UI.toast(`<strong style="color:var(--accent-color)">${gen.name}</strong> AUTO UNLOCKED!`);
       updateGeneratorUI(i);
     }
   });
 }
-
 function runAutobuyers() {
   game.generators.forEach((gen, i) => {
-    if (gen.autoUnlocked && gen.autoActive) {
-      buyMaxGenerator(i, true); // UI更新なしで高速購入
-    }
+    if (gen.autoUnlocked && gen.autoActive) buyMaxGenerator(i, true);
   });
 }
-
 function toggleAutobuyer(id) {
   const gen = game.generators[id];
   if (!gen.autoUnlocked) return;
   gen.autoActive = !gen.autoActive;
-  updateGeneratorUI(id); // スイッチ切り替えを即座に反映
+  updateGeneratorUI(id);
 }
 
-// --- ゲームループ ---
+// --- Main Loop ---
 function gameLoop() {
   if (isCrunching) return;
-
   const now = Date.now();
   let dt = (now - game.stats.lastSaveTime) / 1000;
   if (dt < 0) dt = 0;
   game.stats.lastSaveTime = now;
 
-  if (game.particles >= INFINITY_LIMIT) {
-    triggerBigCrunch();
-    return;
-  }
+  if (game.particles >= INFINITY_LIMIT) { triggerBigCrunch(); return; }
 
-  // Auto解放チェック
   checkAutoUnlock();
-
-  // Auto実行 (0.1秒ごとに処理)
   autoBuyerTimer += dt;
-  if (autoBuyerTimer >= 0.1) {
-    runAutobuyers();
-    autoBuyerTimer = 0;
-  }
+  if (autoBuyerTimer >= 0.1) { runAutobuyers(); autoBuyerTimer = 0; }
 
   const globalMult = getGlobalMultiplier();
   
-  // 生産
+  // Production
   const g0 = game.generators[0];
   const pps = g0.amount * g0.production * globalMult;
   game.particles += pps * dt;
@@ -208,7 +168,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// --- 購入アクション ---
+// --- Actions ---
 function buyGenerator(id) {
   const gen = game.generators[id];
   const amount = game.settings.buyAmount;
@@ -221,7 +181,6 @@ function buyGenerator(id) {
     updateGeneratorUI(id);
   }
 }
-
 function buyMaxGenerator(id, silent = false) {
   const gen = game.generators[id];
   const max = calcMaxAffordable(gen, game.particles);
@@ -234,51 +193,30 @@ function buyMaxGenerator(id, silent = false) {
     if (!silent) updateGeneratorUI(id);
   }
 }
-
 function buyMaxAll() {
-  for (let i = game.generators.length - 1; i >= 0; i--) {
-    buyMaxGenerator(i);
-  }
+  for (let i = game.generators.length - 1; i >= 0; i--) buyMaxGenerator(i);
 }
-
 function doLinac() {
   const req = 1 + (game.linacs * 10);
   if (game.generators[7].amount < req) return;
-  UI.confirm("ライナックを実行 [L]", 
-    `リセットして倍率を強化します。<br>Next: x${format(Math.pow(1.2+(game.shifts*0.2), game.linacs+1))}`, 
-    () => {
-      game.linacs++;
-      game.stats.totalLinacs++;
-      resetOnPrestige();
-      UI.toast("ライナック完了！");
-    });
+  UI.confirm("ライナックを実行 [L]", `Next: x${format(Math.pow(1.2+(game.shifts*0.2), game.linacs+1))}`, () => {
+    game.linacs++; game.stats.totalLinacs++; resetOnPrestige(); UI.toast("ライナック完了！");
+  });
 }
-
 function doLinacShift() {
   const req = 5 + (game.shifts * 5);
   if (game.linacs < req) return;
-  UI.confirm("ライナック・シフト [S+L]", 
-    `次元超越を行います。<br>全てをリセットし、ベース倍率を増加させます。`, 
-    () => {
-      game.shifts++;
-      game.linacs = 0;
-      resetOnPrestige();
-      UI.toast("シフト完了！次元拡張成功。");
-    });
+  UI.confirm("ライナック・シフト [S+L]", `次元超越を行います。`, () => {
+    game.shifts++; game.linacs = 0; resetOnPrestige(); UI.toast("シフト完了！");
+  });
 }
-
 function resetOnPrestige() {
   game.particles = 10;
-  game.generators.forEach(g => {
-    g.amount = 0;
-    g.bought = 0;
-    g.production = 1;
-    // AutoUnlockはリセット時に維持する設定
-  });
+  game.generators.forEach(g => { g.amount = 0; g.bought = 0; g.production = 1; });
   saveGame();
 }
 
-// --- UI更新 ---
+// --- UI Update ---
 function updateUI(pps) {
   document.getElementById('particle-display').textContent = format(game.particles) + " 粒子";
   document.getElementById('pps-display').textContent = `(+${format(pps)} /秒)`;
@@ -287,14 +225,15 @@ function updateUI(pps) {
   const mk8 = game.generators[7].amount;
   const linacPct = Math.min(100, (mk8 / linacReq) * 100);
   document.getElementById('prog-linac').style.width = `${linacPct}%`;
-  document.getElementById('prog-linac-text').textContent = linacPct.toFixed(0) + "%"; // ここは整数でOK
+  document.getElementById('prog-linac-text').textContent = linacPct.toFixed(0) + "%";
   document.getElementById('current-linac-count').textContent = game.linacs;
 
   const shiftReq = 5 + (game.shifts * 5);
   if (game.shifts > 0 || game.linacs > 0) {
     document.getElementById('shift-prog-row').style.display = 'flex';
-    document.getElementById('prog-shift').style.width = `${Math.min(100, (game.linacs/shiftReq)*100)}%`;
-    document.getElementById('prog-shift-text').textContent = Math.min(100, (game.linacs/shiftReq)*100).toFixed(0) + "%";
+    const shiftPct = Math.min(100, (game.linacs/shiftReq)*100);
+    document.getElementById('prog-shift').style.width = `${shiftPct}%`;
+    document.getElementById('prog-shift-text').textContent = shiftPct.toFixed(0) + "%";
   }
 
   if (game.shifts > 0) {
@@ -306,27 +245,22 @@ function updateUI(pps) {
   const pContainer = document.getElementById('prestige-container');
   const btnLinac = document.getElementById('btn-linac');
   const btnShift = document.getElementById('btn-shift');
-
   if (mk8 >= linacReq * 0.5 || game.linacs > 0) {
     pContainer.style.display = 'block';
     if (mk8 >= linacReq) {
-      btnLinac.classList.remove('disabled');
-      btnLinac.onclick = doLinac;
-      btnLinac.style.opacity = "1";
+      btnLinac.classList.remove('disabled'); btnLinac.onclick = doLinac; btnLinac.style.opacity = "1";
       btnLinac.querySelector('strong').textContent = "ライナックを実行 [L]";
     } else {
-      btnLinac.classList.add('disabled');
-      btnLinac.onclick = null;
-      btnLinac.style.opacity = "0.5";
+      btnLinac.classList.add('disabled'); btnLinac.onclick = null; btnLinac.style.opacity = "0.5";
       btnLinac.querySelector('strong').textContent = `Req: Mk.8 x${format(linacReq)}`;
     }
     btnShift.style.display = (game.linacs >= shiftReq) ? 'inline-block' : 'none';
   } else {
     pContainer.style.display = 'none';
   }
-
-  // Autoバッジの状態もここで更新（重い場合は最適化推奨だが、今の規模ならOK）
-  game.generators.forEach((g, i) => updateGeneratorUI(i));
+  // Note: Generator UI update is skipped here for performance, handled by interactions/auto
+  // but let's run it once per frame for smoothness if not too heavy
+  game.generators.forEach((g,i)=>updateGeneratorUI(i)); 
 }
 
 function updateGeneratorUI(id) {
@@ -345,16 +279,12 @@ function updateGeneratorUI(id) {
   if (game.particles >= cost) btn.classList.remove('disabled');
   else btn.classList.add('disabled');
 
-  // Autoバッジ更新
   const badge = document.getElementById(`auto-badge-${id}`);
   if (badge) {
     if (gen.autoUnlocked) {
       badge.classList.add('unlocked');
       badge.textContent = gen.autoActive ? "AUTO: ON" : "AUTO: OFF";
-      if (gen.autoActive) badge.classList.add('active');
-      else badge.classList.remove('active');
-      // クリックイベントの再設定を防ぐため、onclickはinitで設定済みか確認するか、
-      // ここで毎回上書きしてもよい（今回はinitで設定済みだが、ロック解除時の切り替えのためにここで設定）
+      if(gen.autoActive) badge.classList.add('active'); else badge.classList.remove('active');
       badge.onclick = () => toggleAutobuyer(id);
     } else {
       const threshold = Number(`1e${50 + (id * 10)}`);
@@ -376,56 +306,31 @@ function updateGlitchEffect() {
   }
 }
 
-// --- ニュース ---
-let newsTimer = 0;
-function updateNewsTicker() {
-  newsTimer++;
-  if (newsTimer > 600) {
-    const content = document.getElementById('news-content');
-    const available = NEWS_MESSAGES.filter(n => game.particles >= n.req);
-    let pool = [];
-    if (available.length > 0) pool.push(available[available.length - 1].text);
-    pool = pool.concat(FILLER_NEWS);
-    const text = pool[Math.floor(Math.random() * pool.length)];
-    
-    const newEl = content.cloneNode(true);
-    newEl.textContent = text;
-    content.parentNode.replaceChild(newEl, content);
-    newsTimer = 0;
-  }
-}
-
-// --- ユーティリティ (.00固定版) ---
+// --- Formatting (.00 fixed) ---
 const UNITS_ENG = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc'];
 const UNITS_JP = ['', '万', '億', '兆', '京', '垓', '𥝱', '穣', '溝', '澗'];
-
 function format(num) {
   if (num === undefined || num === null) return "0.00";
-  
-  // どんな小さな数でも小数点2桁固定でカクつき防止
-  if (num < 1000) return num.toFixed(2);
+  if (num < 1000) return num.toFixed(2); // Always 2 decimals for small nums
   
   if (game.settings.notation === 'sci') return formatScientific(num);
   
   let unitArr = game.settings.notation === 'jp' ? UNITS_JP : UNITS_ENG;
   let step = game.settings.notation === 'jp' ? 4 : 3;
-  
   let e = Math.floor(Math.log10(num));
   let level = Math.floor(e / step);
   
   if (level >= unitArr.length) return formatScientific(num);
   
   let m = num / Math.pow(10, level * step);
-  return m.toFixed(2) + unitArr[level];
+  return m.toFixed(2) + unitArr[level]; // Always 2 decimals
 }
-
 function formatScientific(num) {
   if(num === 0) return "0.00";
   let e = Math.floor(Math.log10(num));
   let m = num / Math.pow(10, e);
   return m.toFixed(2) + "e" + e;
 }
-
 function formatTime(sec) {
   if (isNaN(sec) || sec < 0) return "0:00:00";
   let h = Math.floor(sec / 3600);
@@ -434,15 +339,28 @@ function formatTime(sec) {
   return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
 }
 
+// --- News Ticker ---
+let newsTimer = 0;
+function updateNewsTicker() {
+  newsTimer++;
+  if (newsTimer > 600) {
+    const content = document.getElementById('news-content');
+    const available = NEWS_MESSAGES.filter(n => game.particles >= n.req);
+    let pool = []; if (available.length > 0) pool.push(available[available.length-1].text);
+    pool = pool.concat(FILLER_NEWS);
+    const text = pool[Math.floor(Math.random()*pool.length)];
+    const newEl = content.cloneNode(true); newEl.textContent = text;
+    content.parentNode.replaceChild(newEl, content); newsTimer = 0;
+  }
+}
+
 // --- Save/Load ---
 function saveGame() {
   if(isCrunching) return;
   game.stats.lastSaveTime = Date.now();
   localStorage.setItem(SAVE_KEY, JSON.stringify(game));
-  const btn = document.activeElement;
-  if(btn && btn.tagName === "BUTTON") UI.toast("セーブ完了");
+  if(document.activeElement && document.activeElement.tagName === "BUTTON") UI.toast("セーブ完了");
 }
-
 function loadGame() {
   const data = localStorage.getItem(SAVE_KEY);
   if (data) {
@@ -457,11 +375,9 @@ function loadGame() {
   }
   setBuyAmount(game.settings.buyAmount);
   document.getElementById('chk-skip-confirm').checked = game.settings.skipConfirm;
-  const sel = document.getElementById('notation-select');
-  if(sel) sel.value = game.settings.notation;
+  if(document.getElementById('notation-select')) document.getElementById('notation-select').value = game.settings.notation;
   processOfflineProgress();
 }
-
 function processOfflineProgress() {
   const now = Date.now();
   const last = game.stats.lastSaveTime;
@@ -470,15 +386,14 @@ function processOfflineProgress() {
     const pps = game.generators[0].amount * game.generators[0].production * getGlobalMultiplier();
     const gained = pps * diff;
     if (gained > 0) {
-      game.particles += gained;
-      game.stats.totalParticles += gained;
-      UI.modal("OFFLINE", `おかえりなさい。<br>オフライン進行 (${formatTime(diff)}) で<br><strong style="color:var(--accent-color)">+${format(gained)} 粒子</strong><br>を獲得しました。`);
+      game.particles += gained; game.stats.totalParticles += gained;
+      UI.modal("OFFLINE", `オフライン進行 (${formatTime(diff)})<br><strong style="color:var(--accent-color)">+${format(gained)} 粒子</strong>`);
     }
   }
   game.stats.lastSaveTime = now;
 }
 
-// --- 初期化 ---
+// --- Initialization ---
 function setBuyAmount(n) {
   game.settings.buyAmount = n;
   document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
@@ -487,49 +402,21 @@ function setBuyAmount(n) {
 }
 function toggleSkipConfirm(el) { game.settings.skipConfirm = el.checked; }
 function changeNotation(val) { game.settings.notation = val; updateUI(0); }
-function hardReset() {
-  if(confirm("【警告】データを完全削除しますか？")) {
-    localStorage.removeItem(SAVE_KEY);
-    location.reload();
-  }
-}
-async function exportSaveToClipboard() {
-  saveGame();
-  try {
-    await navigator.clipboard.writeText(btoa(JSON.stringify(game)));
-    UI.toast("コピーしました");
-  } catch(e) { UI.modal("Error", "クリップボードへのコピーに失敗しました"); }
-}
-async function importSaveFromClipboard() {
-  try {
-    const text = await navigator.clipboard.readText();
-    const data = JSON.parse(atob(text));
-    if (data && data.particles !== undefined) {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-      location.reload();
-    } else throw new Error();
-  } catch(e) { UI.toast("データが無効です"); }
-}
-
+function hardReset() { if(confirm("【警告】データを完全削除しますか？")) { localStorage.removeItem(SAVE_KEY); location.reload(); } }
+async function exportSaveToClipboard() { saveGame(); try { await navigator.clipboard.writeText(btoa(JSON.stringify(game))); UI.toast("コピーしました"); } catch(e){ UI.modal("Error", "コピー失敗"); } }
+async function importSaveFromClipboard() { try { const t = await navigator.clipboard.readText(); const d = JSON.parse(atob(t)); if(d && d.particles!==undefined){ localStorage.setItem(SAVE_KEY, JSON.stringify(d)); location.reload(); } else throw new Error(); } catch(e){ UI.toast("データ無効"); } }
 function triggerBigCrunch() {
-  isCrunching = true;
-  document.getElementById('crunch-overlay').style.display = 'flex';
+  isCrunching = true; document.getElementById('crunch-overlay').style.display = 'flex';
   setTimeout(() => {
-    const fresh = getInitialState();
-    fresh.infinity.crunchCount = (game.infinity.crunchCount || 0) + 1;
-    game = fresh;
-    saveGame();
-    location.reload();
+    const fresh = getInitialState(); fresh.infinity.crunchCount = (game.infinity.crunchCount||0)+1;
+    game = fresh; saveGame(); location.reload();
   }, 4000);
 }
-
 document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'INPUT') return;
+  if(e.target.tagName==='INPUT') return;
   const k = e.key.toUpperCase();
-  if (['1','2','3','4','5','6','7','8'].includes(k)) buyGenerator(parseInt(k)-1);
-  if (k === 'M') buyMaxAll();
-  if (k === 'S') saveGame();
-  if (k === 'L') doLinac();
+  if(['1','2','3','4','5','6','7','8'].includes(k)) buyGenerator(parseInt(k)-1);
+  if(k==='M') buyMaxAll(); if(k==='S') saveGame(); if(k==='L') doLinac();
 });
 
 function init() {
@@ -537,8 +424,6 @@ function init() {
   getInitialState().generators.forEach((g, i) => {
     const div = document.createElement('div');
     div.className = 'generator-row';
-    
-    // AutoバッジのHTML生成部分
     div.innerHTML = `
       <div class="gen-info">
         <div class="gen-name-row">
@@ -569,7 +454,3 @@ function init() {
 }
 
 init();
-
-// --- DEBUG: テスト用にAutoを強制解放したい場合はコンソールでこれを実行 ---
-// game.generators.forEach(g => g.autoUnlocked = true);
-// saveGame();
