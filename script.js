@@ -1,5 +1,5 @@
 /**
- * the-Particle v2.4.0 (Infinity Fix: No-Reload Version)
+ * the-Particle v2.4.1 (Infinity Fix: No-Reload & IP Fix)
  */
 
 const SAVE_KEY = 'theParticle_v2_4';
@@ -483,57 +483,66 @@ function updateGlitchEffect() {
   }
 }
 
-// --- ビッグ・クランチ（確実な修正版） ---
+// --- ビッグ・クランチ（修正版：リロードなし & IP加算修正） ---
 function triggerBigCrunch() {
   const currentTime = Date.now() - game.stats.startTime;
   
-  // Infinityオブジェクト初期化
+  // Infinityオブジェクト初期化（念のため）
   if (!game.infinity) game.infinity = { ip:0, crunchCount:0, bestTime:null };
   
-  // ポイント加算
-  game.infinity.ip += 1;
-  game.infinity.crunchCount += 1;
+  // ポイント加算 (リセット前に確実に加算)
+  game.infinity.ip = (game.infinity.ip || 0) + 1;
+  game.infinity.crunchCount = (game.infinity.crunchCount || 0) + 1;
+  
   if (game.infinity.bestTime === null || currentTime < game.infinity.bestTime) {
     game.infinity.bestTime = currentTime;
   }
   
-  // セーブを一時ブロックして演出
+  // ユーザー操作ブロック
   isCrunching = true;
 
   const overlay = document.getElementById('crunch-overlay');
   if(overlay) overlay.style.display = 'flex';
   
+  // 演出時間待機後にリセット
   setTimeout(() => {
     performInfinityReset();
   }, 4000);
 }
 
 function performInfinityReset() {
-  // リロードせず、変数を初期状態にリセットする方式に変更
-  // 1. 引き継ぐデータをバックアップ
+  // 1. 引き継ぐデータ（Infinity情報と設定）をディープコピーで退避
   const savedInfinity = JSON.parse(JSON.stringify(game.infinity));
   const savedSettings = JSON.parse(JSON.stringify(game.settings));
   
-  // 2. ゲーム全体を初期状態にする
-  // これでParticles, Linacs, Shifts, Generators全てが初期化されます
+  // 2. ゲーム全体を初期状態にする（新しいオブジェクトを作成）
+  // これでParticles, Linacs, Shifts, Generatorsなどは全て初期化される
   const freshState = getInitialState();
+  
+  // 3. グローバルな game 変数を新しい状態に置き換える
   game = freshState;
   
-  // 3. バックアップしておいたIPと設定だけ戻す
+  // 4. 退避しておいたデータを新しい状態に戻す
   game.infinity = savedInfinity;
   game.settings = savedSettings;
   
-  // 4. 状態のリフレッシュ
-  isCrunching = false; // ブロック解除
-  saveGame(); // 確実にセーブ
+  // 5. 状態フラグのリセット
+  isCrunching = false; 
   
-  // 5. UIの強制リセット（リロードしないので手動で隠す）
+  // 6. UIの強制更新
   const overlay = document.getElementById('crunch-overlay');
   if(overlay) overlay.style.display = 'none';
   
-  // 6. 画面表示を更新
-  updateUI(0);
-  gameLoop(); // ループ継続
+  updateUI(0);      // 表示数値を0に
+  updateStats();    // 統計時間の表示リセット
+  
+  // 7. 新しい状態でセーブ
+  saveGame();
+  
+  // ※ location.reload() は削除しました
+  
+  // ゲームループは requestAnimationFrame で再帰しているので、
+  // game変数が置き換わった次のフレームから新しい状態で動作します。
 }
 
 // --- セーブ・ロード ---
@@ -668,3 +677,6 @@ function init() {
 }
 
 init();
+
+
+
