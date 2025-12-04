@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>the-Particle: Shift</title>
+  <link rel="icon" type="image/png" href="title.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -33,8 +34,8 @@
         </div>
       </header>
 
-      <!-- シフト情報バー -->
-      <div id="shift-status" class="shift-bar">
+      <!-- シフト情報バー (初期状態は非表示: display:none) -->
+      <div id="shift-status" class="shift-bar" style="display: none;">
         現在のライナック倍率: <span id="shift-mult-display" style="color:#00e676; font-weight:bold;">x1.2</span>
         <span style="font-size:0.8em; color:#888; margin-left:10px;">(シフト回数: <span id="shift-count">0</span>)</span>
       </div>
@@ -52,7 +53,7 @@
             <span style="font-size:0.8em;">生産倍率UP & リセット</span>
           </button>
           
-          <!-- ライナック・シフトボタン（条件を満たすと出現） -->
+          <!-- ライナック・シフトボタン -->
           <button class="prestige-btn shift-btn" id="btn-shift" onclick="doLinacShift()" style="display:none;">
             <strong>ライナック・シフト</strong><br>
             <span style="font-size:0.8em;">全てを失い、ライナック性能強化</span>
@@ -102,7 +103,6 @@
             <span class="stat-label">総生産量</span>
             <span id="stat-total" class="stat-val">0 粒子</span>
           </div>
-          <!-- 条件付き表示項目 -->
           <div class="stat-row" id="row-prestige" style="display:none;">
             <span class="stat-label">通算ライナック回数</span>
             <span id="stat-prestige" class="stat-val">0 回</span>
@@ -164,7 +164,7 @@
       </div>
 
       <div class="sidebar-footer">
-        ver 2.3.0 Shift Update
+        ver 2.3.1 Shift Update
       </div>
     </aside>
   </div>
