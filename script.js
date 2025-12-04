@@ -407,25 +407,38 @@ function updateNewsTicker() {
 // --- Utils ---
 const UNITS_ENG = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc'];
 const UNITS_JP = ['', '万', '億', '兆', '京', '垓', '𥝱', '穣', '溝', '澗'];
+
 function format(num) {
-  if (num === undefined || num === null) return "0";
-  if (num < 1000) return Math.floor(num * 100) / 100 + "";
+  if (num === undefined || num === null) return "0.00";
+  
+  // 1000未満でも常に小数点2桁を表示 (.toFixed(2)) して幅ブレを防止
+  if (num < 1000) return num.toFixed(2);
+  
   if (game.settings.notation === 'sci') return formatScientific(num);
+  
   let unitArr = game.settings.notation === 'jp' ? UNITS_JP : UNITS_ENG;
   let step = game.settings.notation === 'jp' ? 4 : 3;
+  
   let e = Math.floor(Math.log10(num));
   let level = Math.floor(e / step);
+  
   if (level >= unitArr.length) return formatScientific(num);
+  
   let m = num / Math.pow(10, level * step);
+  // 単位付きでも常に小数点2桁固定
   return m.toFixed(2) + unitArr[level];
 }
+
 function formatScientific(num) {
-  if(num === 0) return "0.00";
+  if (num === 0) return "0.00";
   let e = Math.floor(Math.log10(num));
   let m = num / Math.pow(10, e);
+  // 科学的記法でもマンティッサを2桁固定
   return m.toFixed(2) + "e" + e;
 }
+
 function formatTime(sec) {
+  if (isNaN(sec) || sec < 0) return "0:00:00";
   let h = Math.floor(sec / 3600);
   let m = Math.floor((sec % 3600) / 60);
   let s = Math.floor(sec % 60);
