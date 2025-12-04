@@ -4,15 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>the-Particle</title>
-  <!-- アイコン画像がある場合はここに配置 -->
-  <link rel="icon" type="image/png" href="title.png">
+  <!-- スタイルシートの読み込み -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- グリッチ・ノイズ演出用レイヤー -->
+  <!-- 演出用レイヤー（グリッチ・ノイズ） -->
   <div id="glitch-layer" class="glitch-overlay"></div>
   
-  <!-- ビッグ・クランチ演出用レイヤー -->
+  <!-- 演出用レイヤー（ビッグ・クランチ：画面崩壊） -->
   <div id="crunch-overlay" class="crunch-overlay" style="display: none;">
     <div class="crunch-message">
       <h1>UNIVERSE COLLAPSED</h1>
@@ -21,7 +20,7 @@
   </div>
 
   <div class="app-wrapper" id="app-wrapper">
-    <!-- メインパネル -->
+    <!-- メインゲーム画面 -->
     <main class="game-panel">
       <header>
         <h1>the-Particle</h1>
@@ -29,13 +28,14 @@
           <h2 id="particle-display">0 粒子</h2>
           <p id="pps-display">(+0.00 /秒)</p>
         </div>
-        <!-- Infinity Point 表示 -->
-        <div id="ip-display-container" style="display:none; color: #b388ff; font-weight:bold; margin-top:5px;">
+        
+        <!-- Infinity Point 表示 (IP獲得後に表示) -->
+        <div id="ip-display-container" style="display:none;">
           Infinity Points: <span id="ip-val">0</span>
         </div>
       </header>
 
-      <!-- シフト情報バー (初期状態は非表示: display:none) -->
+      <!-- シフト情報バー (シフト実行後に表示) -->
       <div id="shift-status" class="shift-bar" style="display: none;">
         現在のライナック倍率: <span id="shift-mult-display" style="color:#00e676; font-weight:bold;">x1.2</span>
         <span style="font-size:0.8em; color:#888; margin-left:10px;">(シフト回数: <span id="shift-count">0</span>)</span>
@@ -54,7 +54,7 @@
             <span style="font-size:0.8em;">生産倍率UP & リセット</span>
           </button>
           
-          <!-- ライナック・シフトボタン -->
+          <!-- ライナック・シフトボタン (条件達成で表示) -->
           <button class="prestige-btn shift-btn" id="btn-shift" onclick="doLinacShift()" style="display:none;">
             <strong>ライナック・シフト</strong><br>
             <span style="font-size:0.8em;">全てを失い、ライナック性能強化</span>
@@ -62,7 +62,7 @@
         </div>
       </div>
 
-      <!-- コントロールバー -->
+      <!-- コントロールバー (購入数切替) -->
       <div class="control-bar">
         <span class="control-label">購入数:</span>
         <div class="toggle-group">
@@ -72,17 +72,16 @@
         </div>
       </div>
 
-      <!-- 加速器リスト -->
-      <div id="generator-container">
-        <!-- JSでリスト生成 -->
-      </div>
+      <!-- 加速器リスト (JSで自動生成) -->
+      <div id="generator-container"></div>
 
+      <!-- モバイル/閉じた時用のメニューボタン -->
       <button id="sidebar-open-btn" class="float-menu-btn" onclick="toggleSidebar()">
         ⚙ メニュー
       </button>
     </main>
 
-    <!-- サイドバー -->
+    <!-- サイドバー (統計・設定) -->
     <aside id="sidebar" class="sidebar">
       <div class="sidebar-header">
         <div class="tab-container">
@@ -113,6 +112,7 @@
             <span id="stat-shift" class="stat-val">0 回</span>
           </div>
           
+          <!-- Infinity到達後の統計 -->
           <div id="infinity-stats" style="display:none; margin-top: 20px; border-top: 1px dashed #555; padding-top:10px;">
             <h3 style="color:#b388ff;">COSMIC STATS</h3>
             <div class="stat-row">
@@ -130,17 +130,17 @@
         <div id="tab-settings" class="sidebar-content">
           <h3>DISPLAY</h3>
           <div class="setting-group">
-            <label class="setting-label">数値表記</label>
+            <label class="setting-label" style="font-size:0.8rem; color:#888;">数値表記</label>
             <div class="select-wrapper">
               <select id="notation-select" onchange="changeNotation(this.value)">
-                <option value="sci">科学的単位</option>
-                <option value="eng">英語単位</option>
-                <option value="jp">日本語単位</option>
+                <option value="sci">科学的単位 (1e10)</option>
+                <option value="eng">英語単位 (10 B)</option>
+                <option value="jp">日本語単位 (100億)</option>
               </select>
             </div>
           </div>
 
-          <h3>DATA MANAGEMENT</h3>
+          <h3 style="margin-top:20px;">DATA MANAGEMENT</h3>
           <div class="setting-group">
             <button class="ui-btn primary" onclick="saveGame()">データをセーブ</button>
             <div class="status-text" id="save-status">オートセーブ有効 (10秒毎)</div>
@@ -150,26 +150,36 @@
             <button class="ui-btn secondary" onclick="importSave()">セーブデータを読み込み</button>
           </div>
           
+          <!-- インポート/エクスポート用エリア -->
           <div id="io-area" style="display:none; margin-top:10px;">
-            <p style="font-size:0.8rem; color:#888; margin-bottom:5px;" id="io-label">データ:</p>
-            <textarea id="save-textarea" rows="4" style="width:100%; background:#222; color:#fff; border:1px solid #444; font-family:monospace; font-size:0.8rem;"></textarea>
+            <p style="font-size:0.8rem; color:#888; margin-bottom:5px;" id="io-label">データ文字列:</p>
+            <textarea id="save-textarea" rows="4" style="width:100%; background:#222; color:#fff; border:1px solid #444; font-family:monospace; font-size:0.8rem; padding:5px;"></textarea>
             <button class="ui-btn primary" id="io-action-btn" style="margin-top:5px;" onclick="confirmImport()">読み込む</button>
           </div>
 
           <div class="setting-group danger-zone">
             <h4>DANGER ZONE</h4>
-            <p>全ての進捗を完全に削除します。</p>
+            <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">全ての進捗を完全に削除します。</p>
             <button class="ui-btn danger" onclick="hardReset()">COMPLETE WIPE</button>
           </div>
         </div>
       </div>
 
       <div class="sidebar-footer">
-        ver 2.3.1 Shift Update
+        ver 2.5 Infinity Update
       </div>
     </aside>
   </div>
 
+  <!-- ゲームロジックの読み込み -->
   <script src="script.js"></script>
 </body>
 </html>
+
+
+
+
+
+Evaluate
+
+Compare
