@@ -1,9 +1,9 @@
 /**
- * the-Particle Shift Update v2.3.1
+ * the-Particle  v1.1.0
  * - Hide Shift Stats until first Shift
  */
 
-const SAVE_KEY = 'theParticle_Shift_v2_3';
+const SAVE_KEY = 'theParticle_v1_1';
 const INFINITY_LIMIT = 1.79e308;
 
 const UNITS_ENG = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
