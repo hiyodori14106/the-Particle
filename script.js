@@ -1,18 +1,18 @@
 /**
- * the-Particle v3.2.0 - Auto Update Fix
- * - Re-implemented Auto Buyers
- * - Integrated with new Buy Max math
+ * the-Particle v3.3.0 - Final Integrated Version
+ * - Auto Buyers Restored
+ * - Fixed Number Formatting (.00)
+ * - Sci-Fi UI Logic
  */
 
-const SAVE_KEY = 'theParticle_v3_2';
+const SAVE_KEY = 'theParticle_v3_final';
 const INFINITY_LIMIT = 1.79e308;
 
-// --- ニュースティッカー ---
+// --- ニュースデータ ---
 const NEWS_MESSAGES = [
   { req: 0, text: "システム起動... 粒子生成プロセス、スタンバイ。" },
   { req: 50, text: "最初の粒子が観測されました。ちっぽけですが、偉大な一歩です。" },
   { req: 500, text: "近所の猫が静電気でフワフワになっています。" },
-  { req: 1e3, text: "研究員が「粒子が見える」と言い始めました。休暇が必要です。" },
   { req: 1e4, text: "オートメーションシステムが稼働を開始しました。" },
   { req: 1e6, text: "物理学会から「やりすぎ」という警告メールが届きました。" },
   { req: 1e9, text: "粒子の重みでサーバー室の床が少し凹みました。" },
@@ -52,7 +52,7 @@ function getInitialState() {
       skipConfirm: false
     },
 
-    // autoUnlocked, autoActive を追加
+    // Auto機能用フラグ: autoUnlocked, autoActive
     generators: [
       { id: 0, name: "Accelerator Mk.1", baseCost: 10,   costMult: 1.5, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: false },
       { id: 1, name: "Accelerator Mk.2", baseCost: 100,  costMult: 1.8, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: false },
@@ -68,7 +68,6 @@ function getInitialState() {
 
 let game = getInitialState();
 let isCrunching = false;
-// オートバイヤーの実行間隔制御用
 let autoBuyerTimer = 0;
 
 // --- UI Helpers ---
@@ -113,7 +112,7 @@ const UI = {
   }
 };
 
-// --- Math Logic ---
+// --- 計算ロジック ---
 function getSumCost(gen, k) {
   const r = gen.costMult;
   const currentCost = gen.baseCost * Math.pow(r, gen.bought);
@@ -136,15 +135,15 @@ function getGlobalMultiplier() {
   return Math.pow(base, game.linacs || 0);
 }
 
-// --- Auto Logic ---
+// --- Auto機能ロジック ---
 function checkAutoUnlock() {
   game.generators.forEach((gen, i) => {
-    // Mk.1は 1e50, Mk.2は 1e60... という閾値設定 (v2準拠)
+    // 解放条件: 1e50, 1e60, ...
     const threshold = Number(`1e${50 + (i * 10)}`);
     if (!gen.autoUnlocked && game.particles >= threshold) {
       gen.autoUnlocked = true;
-      UI.toast(`${gen.name} のオート機能が解放されました`);
-      updateGeneratorUI(i); // バッジ表示更新のため
+      UI.toast(`<strong style="color:var(--accent-color)">${gen.name}</strong> のAUTO機能が解放されました！`);
+      updateGeneratorUI(i);
     }
   });
 }
@@ -152,8 +151,7 @@ function checkAutoUnlock() {
 function runAutobuyers() {
   game.generators.forEach((gen, i) => {
     if (gen.autoUnlocked && gen.autoActive) {
-      // Max購入を試みる
-      buyMaxGenerator(i, true); // true = suppress UI update for performance
+      buyMaxGenerator(i, true); // UI更新なしで高速購入
     }
   });
 }
@@ -162,10 +160,10 @@ function toggleAutobuyer(id) {
   const gen = game.generators[id];
   if (!gen.autoUnlocked) return;
   gen.autoActive = !gen.autoActive;
-  updateGeneratorUI(id);
+  updateGeneratorUI(id); // スイッチ切り替えを即座に反映
 }
 
-// --- Game Loop ---
+// --- ゲームループ ---
 function gameLoop() {
   if (isCrunching) return;
 
@@ -179,26 +177,24 @@ function gameLoop() {
     return;
   }
 
-  // Unlock Check
+  // Auto解放チェック
   checkAutoUnlock();
 
-  // Autobuyer Execution (Every ~0.5s to save performance, or per frame if light)
+  // Auto実行 (0.1秒ごとに処理)
   autoBuyerTimer += dt;
-  if (autoBuyerTimer >= 0.1) { // 0.1秒ごとに実行
+  if (autoBuyerTimer >= 0.1) {
     runAutobuyers();
     autoBuyerTimer = 0;
   }
 
-  // Production
   const globalMult = getGlobalMultiplier();
   
-  // Tier 1 -> Particles
+  // 生産
   const g0 = game.generators[0];
   const pps = g0.amount * g0.production * globalMult;
   game.particles += pps * dt;
   game.stats.totalParticles += pps * dt;
 
-  // Tier N -> Tier N-1
   for (let i = 1; i < game.generators.length; i++) {
     const producer = game.generators[i];
     const target = game.generators[i - 1];
@@ -212,7 +208,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// --- Actions ---
+// --- 購入アクション ---
 function buyGenerator(id) {
   const gen = game.generators[id];
   const amount = game.settings.buyAmount;
@@ -277,15 +273,12 @@ function resetOnPrestige() {
     g.amount = 0;
     g.bought = 0;
     g.production = 1;
-    // Unlock状態は維持するか、リセットするか？
-    // 通常、Prestigeで自動化は維持されることが多いが、
-    // ここでは「全てを失う」設定ならfalseにするが、遊びやすさ重視でtrue維持推奨
-    // g.autoUnlocked = false; // 維持するならコメントアウト
+    // AutoUnlockはリセット時に維持する設定
   });
   saveGame();
 }
 
-// --- UI Updates ---
+// --- UI更新 ---
 function updateUI(pps) {
   document.getElementById('particle-display').textContent = format(game.particles) + " 粒子";
   document.getElementById('pps-display').textContent = `(+${format(pps)} /秒)`;
@@ -294,14 +287,14 @@ function updateUI(pps) {
   const mk8 = game.generators[7].amount;
   const linacPct = Math.min(100, (mk8 / linacReq) * 100);
   document.getElementById('prog-linac').style.width = `${linacPct}%`;
-  document.getElementById('prog-linac-text').textContent = `${linacPct.toFixed(0)}%`;
+  document.getElementById('prog-linac-text').textContent = linacPct.toFixed(0) + "%"; // ここは整数でOK
   document.getElementById('current-linac-count').textContent = game.linacs;
 
   const shiftReq = 5 + (game.shifts * 5);
   if (game.shifts > 0 || game.linacs > 0) {
     document.getElementById('shift-prog-row').style.display = 'flex';
     document.getElementById('prog-shift').style.width = `${Math.min(100, (game.linacs/shiftReq)*100)}%`;
-    document.getElementById('prog-shift-text').textContent = `${Math.min(100, (game.linacs/shiftReq)*100).toFixed(0)}%`;
+    document.getElementById('prog-shift-text').textContent = Math.min(100, (game.linacs/shiftReq)*100).toFixed(0) + "%";
   }
 
   if (game.shifts > 0) {
@@ -332,9 +325,7 @@ function updateUI(pps) {
     pContainer.style.display = 'none';
   }
 
-  // ジェネレーターUI更新は requestAnimationFrame毎だと重いので、
-  // 変化があるときだけ呼ぶのが理想だが、ここでは毎F呼ぶ（Autoもあるため）
-  // ただしAutoBuyerが高速に動くときはスキップされるようになっている
+  // Autoバッジの状態もここで更新（重い場合は最適化推奨だが、今の規模ならOK）
   game.generators.forEach((g, i) => updateGeneratorUI(i));
 }
 
@@ -343,7 +334,6 @@ function updateGeneratorUI(id) {
   const amtEl = document.getElementById(`amt-${id}`);
   if(!amtEl) return;
 
-  // 数値更新
   amtEl.textContent = format(gen.amount);
   document.getElementById(`mult-${id}`).textContent = "x" + format(gen.production * getGlobalMultiplier());
   
@@ -363,6 +353,8 @@ function updateGeneratorUI(id) {
       badge.textContent = gen.autoActive ? "AUTO: ON" : "AUTO: OFF";
       if (gen.autoActive) badge.classList.add('active');
       else badge.classList.remove('active');
+      // クリックイベントの再設定を防ぐため、onclickはinitで設定済みか確認するか、
+      // ここで毎回上書きしてもよい（今回はinitで設定済みだが、ロック解除時の切り替えのためにここで設定）
       badge.onclick = () => toggleAutobuyer(id);
     } else {
       const threshold = Number(`1e${50 + (id * 10)}`);
@@ -373,7 +365,6 @@ function updateGeneratorUI(id) {
   }
 }
 
-// --- Glitch/Effects ---
 function updateGlitchEffect() {
   const overlay = document.getElementById('glitch-layer');
   if (game.particles > 1e200) {
@@ -385,7 +376,7 @@ function updateGlitchEffect() {
   }
 }
 
-// --- News ---
+// --- ニュース ---
 let newsTimer = 0;
 function updateNewsTicker() {
   newsTimer++;
@@ -404,14 +395,14 @@ function updateNewsTicker() {
   }
 }
 
-// --- Utils ---
+// --- ユーティリティ (.00固定版) ---
 const UNITS_ENG = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc'];
 const UNITS_JP = ['', '万', '億', '兆', '京', '垓', '𥝱', '穣', '溝', '澗'];
 
 function format(num) {
   if (num === undefined || num === null) return "0.00";
   
-  // 1000未満でも常に小数点2桁を表示 (.toFixed(2)) して幅ブレを防止
+  // どんな小さな数でも小数点2桁固定でカクつき防止
   if (num < 1000) return num.toFixed(2);
   
   if (game.settings.notation === 'sci') return formatScientific(num);
@@ -425,15 +416,13 @@ function format(num) {
   if (level >= unitArr.length) return formatScientific(num);
   
   let m = num / Math.pow(10, level * step);
-  // 単位付きでも常に小数点2桁固定
   return m.toFixed(2) + unitArr[level];
 }
 
 function formatScientific(num) {
-  if (num === 0) return "0.00";
+  if(num === 0) return "0.00";
   let e = Math.floor(Math.log10(num));
   let m = num / Math.pow(10, e);
-  // 科学的記法でもマンティッサを2桁固定
   return m.toFixed(2) + "e" + e;
 }
 
@@ -453,6 +442,7 @@ function saveGame() {
   const btn = document.activeElement;
   if(btn && btn.tagName === "BUTTON") UI.toast("セーブ完了");
 }
+
 function loadGame() {
   const data = localStorage.getItem(SAVE_KEY);
   if (data) {
@@ -462,7 +452,6 @@ function loadGame() {
       game = { ...fresh, ...saved };
       game.stats = { ...fresh.stats, ...saved.stats };
       game.settings = { ...fresh.settings, ...saved.settings };
-      // Generatorの結合（AutoUnlockフラグなどを維持しつつ、新プロパティも反映）
       game.generators = fresh.generators.map((g, i) => ({ ...g, ...(saved.generators[i] || {}) }));
     } catch(e) { console.error(e); }
   }
@@ -472,6 +461,7 @@ function loadGame() {
   if(sel) sel.value = game.settings.notation;
   processOfflineProgress();
 }
+
 function processOfflineProgress() {
   const now = Date.now();
   const last = game.stats.lastSaveTime;
@@ -488,7 +478,7 @@ function processOfflineProgress() {
   game.stats.lastSaveTime = now;
 }
 
-// --- Init ---
+// --- 初期化 ---
 function setBuyAmount(n) {
   game.settings.buyAmount = n;
   document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
@@ -547,6 +537,8 @@ function init() {
   getInitialState().generators.forEach((g, i) => {
     const div = document.createElement('div');
     div.className = 'generator-row';
+    
+    // AutoバッジのHTML生成部分
     div.innerHTML = `
       <div class="gen-info">
         <div class="gen-name-row">
@@ -554,7 +546,7 @@ function init() {
           <span id="auto-badge-${i}" class="auto-badge">Req: 1e${50 + i * 10}</span>
         </div>
         <div class="gen-stats">
-          所持: <span id="amt-${i}" style="color:#fff;font-weight:bold;">0</span> | 
+          所持: <span id="amt-${i}" style="color:#fff;font-weight:bold;">0.00</span> | 
           倍率: <span id="mult-${i}" style="color:var(--accent-color)">x1.00</span>
         </div>
       </div>
@@ -578,15 +570,6 @@ function init() {
 
 init();
 
-
-
-
-
-Evaluate
-
-Compare
-
-
-
-57,226 個のトークン
- 自動消去
+// --- DEBUG: テスト用にAutoを強制解放したい場合はコンソールでこれを実行 ---
+// game.generators.forEach(g => g.autoUnlocked = true);
+// saveGame();
