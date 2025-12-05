@@ -622,38 +622,6 @@ select {
   from { width: 0; }
   to { width: 100%; }
 }
-実装のポイント
-演出を再生するには、HTML側に以下の構造を追加し、JavaScriptでクラスを付与してください。
-
-HTMLへの追加
-<div id="crunch-overlay" class="crunch-overlay">
-  <div class="event-horizon"></div>
-  <div class="singularity"></div>
-  <div class="crunch-message">
-    <h1>BIG CRUNCH</h1>
-    <p>REWRITING UNIVERSE DATA...</p>
-  </div>
-</div>
-JavaScriptでの呼び出し（例）
-ビッグクランチ実行時に以下のJSを実行すると演出が始まります。
-
-function triggerBigCrunch() {
-  const overlay = document.getElementById('crunch-overlay');
-  
-  // 1. アニメーション開始
-  overlay.classList.add('active');
-  
-  // 2. 画面が白く光った瞬間(約5秒後)に内部データをリセット
-  setTimeout(() => {
-     // ここにゲームリセットのロジックを入れる (resetGame() など)
-     console.log("Universe Reset!");
-  }, 5000);
-
-  // 3. 演出終了（必要ならクラスを外すか、画面をリロードする）
-  setTimeout(() => {
-     overlay.classList.remove('active');
-  }, 8000);
-}
 /* =========================================
    TAB SWITCHING FIX (Add to end of CSS)
    ========================================= */
@@ -701,4 +669,36 @@ function triggerBigCrunch() {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 4px;
+}
+実装のポイント
+演出を再生するには、HTML側に以下の構造を追加し、JavaScriptでクラスを付与してください。
+
+HTMLへの追加
+<div id="crunch-overlay" class="crunch-overlay">
+  <div class="event-horizon"></div>
+  <div class="singularity"></div>
+  <div class="crunch-message">
+    <h1>BIG CRUNCH</h1>
+    <p>REWRITING UNIVERSE DATA...</p>
+  </div>
+</div>
+JavaScriptでの呼び出し（例）
+ビッグクランチ実行時に以下のJSを実行すると演出が始まります。
+
+function triggerBigCrunch() {
+  const overlay = document.getElementById('crunch-overlay');
+  
+  // 1. アニメーション開始
+  overlay.classList.add('active');
+  
+  // 2. 画面が白く光った瞬間(約5秒後)に内部データをリセット
+  setTimeout(() => {
+     // ここにゲームリセットのロジックを入れる (resetGame() など)
+     console.log("Universe Reset!");
+  }, 5000);
+
+  // 3. 演出終了（必要ならクラスを外すか、画面をリロードする）
+  setTimeout(() => {
+     overlay.classList.remove('active');
+  }, 8000);
 }
