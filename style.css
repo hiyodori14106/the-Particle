@@ -1,44 +1,38 @@
 /* =========================================
-   Google Fonts Import
+   1. Google Fonts Import
    ========================================= */
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Roboto+Mono:wght@300;500;700&display=swap');
 
 /* =========================================
-   Variables & Theme
+   2. Variables & Theme
    ========================================= */
 :root {
   /* Colors */
   --bg-core: #050507;
-  --bg-panel: rgba(20, 20, 25, 0.7);
-  --bg-sidebar: #0a0a0c;
+  --bg-sidebar: rgba(10, 10, 12, 0.95);
   
-  --color-main: #00ff9d;       /* Cyber Green */
-  --color-accent: #00bcd4;     /* Hologram Blue */
-  --color-gold: #ffb300;       /* Prestige Gold */
-  --color-danger: #ff2e63;     /* Warning Red */
-  --color-infinity: #d500f9;   /* Cosmic Purple */
+  --color-main: #00ff9d;    /* Cyber Green */
+  --color-accent: #00bcd4;  /* Hologram Blue */
+  --color-gold: #ffb300;    /* Prestige Gold */
+  --color-danger: #ff2e63;  /* Warning Red */
+  --color-infinity: #d500f9;/* Cosmic Purple */
   
   --text-primary: #e0e0e0;
   --text-dim: #6c757d;
 
-  --border-tech: 1px solid rgba(255, 255, 255, 0.1);
-  
   /* Fonts */
   --font-tech: 'Rajdhani', sans-serif;
   --font-mono: 'Roboto Mono', monospace;
 }
 
 /* =========================================
-   Global Reset & Base Styles
+   3. Global Reset & Base Styles
    ========================================= */
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   background-color: var(--bg-core);
-  background-image: 
-    radial-gradient(circle at 50% 50%, #111 0%, #000 100%);
+  background-image: radial-gradient(circle at 50% 50%, #111 0%, #000 100%);
   color: var(--text-primary);
   font-family: var(--font-tech);
   margin: 0;
@@ -52,30 +46,22 @@ body::before {
   content: "";
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background: 
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+    linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
   background-size: 100% 2px, 3px 100%;
   pointer-events: none;
   z-index: 0;
 }
 
 /* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #000;
-}
-::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-main);
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-main); }
 
 /* =========================================
-   Layout Containers
+   4. Layout Containers
    ========================================= */
 .app-wrapper {
   display: flex;
@@ -83,6 +69,13 @@ body::before {
   height: 100%;
   position: relative;
   z-index: 1;
+  transition: margin-right 0.4s ease;
+}
+
+/* PC: Sidebar Open -> Add margin */
+@media (min-width: 769px) {
+  .app-wrapper { margin-right: 380px; }
+  .app-wrapper.closed { margin-right: 0; }
 }
 
 .game-panel {
@@ -97,7 +90,7 @@ body::before {
 }
 
 /* =========================================
-   Header & Display
+   5. Header & Display
    ========================================= */
 header {
   text-align: center;
@@ -117,9 +110,7 @@ header::after {
   transform: translateX(-50%);
   box-shadow: 0 0 10px var(--color-main);
 }
-header:hover::after {
-  width: 80%;
-}
+header:hover::after { width: 80%; }
 
 h1 {
   font-size: 1rem;
@@ -169,7 +160,7 @@ h1 {
 }
 
 /* =========================================
-   Status Bars (Shift / Control)
+   6. Status & Controls
    ========================================= */
 .shift-bar {
   background: rgba(0, 188, 212, 0.1);
@@ -230,13 +221,13 @@ h1 {
 }
 
 /* =========================================
-   Generators List
+   7. Generators & Buttons
    ========================================= */
 #generator-container {
   flex: 1;
   overflow-y: auto;
   padding-right: 10px;
-  mask-image: linear-gradient(to bottom, black 90%, transparent 100%); /* Fade out at bottom */
+  mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
 }
 
 .generator-row {
@@ -253,8 +244,6 @@ h1 {
   transition: all 0.2s ease;
   backdrop-filter: blur(5px);
 }
-
-/* Hover Effect */
 .generator-row:hover {
   background: rgba(255, 255, 255, 0.07);
   border-color: rgba(0, 255, 157, 0.3);
@@ -269,10 +258,7 @@ h1 {
   box-shadow: 0 0 10px var(--color-main);
 }
 
-.gen-info {
-  flex: 1;
-}
-
+.gen-info { flex: 1; }
 .gen-name {
   font-size: 1.1rem;
   font-weight: 700;
@@ -283,13 +269,11 @@ h1 {
   display: flex;
   align-items: center;
 }
-
 .gen-amount {
   font-family: var(--font-mono);
   font-size: 0.85rem;
   color: var(--text-dim);
 }
-
 .gen-multiplier {
   font-family: var(--font-mono);
   color: var(--color-main);
@@ -310,39 +294,21 @@ h1 {
   letter-spacing: 0.5px;
   transition: all 0.3s;
 }
-.auto-badge.clickable:hover {
-  border-color: #fff;
-  color: #fff;
-}
 .auto-badge.active {
   background: rgba(0, 255, 157, 0.1);
   border-color: var(--color-main);
   color: var(--color-main);
   box-shadow: 0 0 8px rgba(0, 255, 157, 0.2);
 }
-.auto-badge.inactive {
-  border-color: var(--color-danger);
-  color: var(--color-danger);
-  opacity: 0.7;
-}
 
-/* =========================================
-   Buttons (Buy & Action)
-   ========================================= */
+/* Buy Buttons */
 .btn-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-width: 140px;
 }
-
-button {
-  outline: none;
-  cursor: pointer;
-  font-family: var(--font-tech);
-  text-transform: uppercase;
-  user-select: none;
-}
+button { outline: none; cursor: pointer; font-family: var(--font-tech); text-transform: uppercase; user-select: none; }
 
 .buy-btn {
   background: transparent;
@@ -358,43 +324,20 @@ button {
   z-index: 1;
 }
 .buy-btn::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; width: 0%; height: 100%;
-  background: var(--color-main);
-  z-index: -1;
-  transition: width 0.2s ease;
+  content: ""; position: absolute; top: 0; left: 0; width: 0%; height: 100%;
+  background: var(--color-main); z-index: -1; transition: width 0.2s ease;
 }
-.buy-btn:hover::before {
-  width: 100%;
-}
-.buy-btn:hover {
-  color: #000;
-  box-shadow: 0 0 15px rgba(0, 255, 157, 0.4);
-}
+.buy-btn:hover::before { width: 100%; }
+.buy-btn:hover { color: #000; box-shadow: 0 0 15px rgba(0, 255, 157, 0.4); }
 
-.buy-btn.max {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-  font-size: 0.75rem;
-}
+.buy-btn.max { border-color: var(--color-accent); color: var(--color-accent); font-size: 0.75rem; }
 .buy-btn.max::before { background: var(--color-accent); }
-.buy-btn.max:hover { 
-  color: #000;
-  box-shadow: 0 0 15px rgba(0, 188, 212, 0.4);
-}
-
-.buy-btn.disabled {
-  border-color: #333;
-  color: #444;
-  background: transparent;
-  cursor: not-allowed;
-  box-shadow: none;
-}
+.buy-btn.max:hover { color: #000; box-shadow: 0 0 15px rgba(0, 188, 212, 0.4); }
+.buy-btn.disabled { border-color: #333; color: #444; background: transparent; cursor: not-allowed; box-shadow: none; }
 .buy-btn.disabled::before { display: none; }
 
 /* =========================================
-   Prestige & Shift Banner
+   8. Prestige Banner
    ========================================= */
 .prestige-banner {
   margin-bottom: 25px;
@@ -410,906 +353,312 @@ button {
   50% { box-shadow: inset 0 0 30px rgba(255, 179, 0, 0.2); }
 }
 
-/* Tech corners for banner */
-.prestige-banner::before, .prestige-banner::after {
-  content: ""; position: absolute; width: 10px; height: 10px;
-  border: 2px solid var(--color-gold); transition: all 0.3s;
-}
-.prestige-banner::before { top: 0; left: 0; border-right: none; border-bottom: none; }
-.prestige-banner::after { bottom: 0; right: 0; border-left: none; border-top: none; }
-
 .prestige-info {
-  text-align: center;
-  color: var(--color-gold);
-  font-size: 1rem;
-  margin-bottom: 15px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  text-transform: uppercase;
+  text-align: center; color: var(--color-gold); font-size: 1rem;
+  margin-bottom: 15px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;
 }
-.prestige-actions {
-  display: flex;
-  gap: 20px;
-}
+.prestige-actions { display: flex; gap: 20px; }
 
 .prestige-btn {
-  flex: 1;
-  padding: 12px;
-  border: none;
-  background: var(--color-gold);
-  color: #000;
-  font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: 1px;
+  flex: 1; padding: 12px; border: none;
+  background: var(--color-gold); color: #000;
+  font-weight: 700; font-size: 1rem; letter-spacing: 1px;
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
   transition: all 0.2s;
 }
-.prestige-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 20px var(--color-gold);
-}
-.prestige-btn.disabled {
-  background: #333;
-  color: #555;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.prestige-btn.shift-btn {
-  background: var(--color-accent);
-  color: #000;
-  position: relative;
-  animation: shiftGlow 3s infinite;
-}
-@keyframes shiftGlow {
-  0%, 100% { box-shadow: 0 0 10px var(--color-accent); }
-  50% { box-shadow: 0 0 30px var(--color-accent); }
-}
+.prestige-btn:hover { transform: translateY(-2px); box-shadow: 0 0 20px var(--color-gold); }
+.prestige-btn.disabled { background: #333; color: #555; cursor: not-allowed; box-shadow: none; }
 
 /* =========================================
-   Sidebar
+   9. Consolidate Sidebar (Optimized)
    ========================================= */
 .sidebar {
-  width: 350px;
+  position: fixed; top: 0; right: 0;
+  width: 380px; height: 100vh;
   background: var(--bg-sidebar);
-  border-left: 1px solid #222;
-  display: flex;
-  flex-direction: column;
-  z-index: 100;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: -10px 0 30px rgba(0,0,0,0.8);
-}
-.app-wrapper.closed .sidebar {
-  transform: translateX(350px);
-  margin-right: -350px; /* Ensure layout reflow */
-}
-
-.sidebar-header {
-  height: 60px;
-  background: #000;
-  display: flex;
-  border-bottom: 1px solid #222;
-}
-
-.tab-btn {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: #555;
-  font-weight: bold;
-  font-family: var(--font-tech);
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  transition: 0.3s;
-  position: relative;
-}
-.tab-btn.active {
-  color: #fff;
-  background: rgba(255,255,255,0.02);
-}
-.tab-btn.active::after {
-  content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
-  background: var(--color-main);
-  box-shadow: 0 0 10px var(--color-main);
-}
-
-.close-btn {
-  width: 50px;
-  background: #000;
-  border: none;
-  color: #555;
-  font-size: 1.2rem;
-  cursor: pointer;
-}
-.close-btn:hover { color: var(--color-danger); }
-
-.sidebar-body {
-  padding: 25px;
-  overflow-y: auto;
-}
-
-.sidebar h3 {
-  color: var(--color-main);
-  font-size: 0.9rem;
-  border-bottom: 1px solid #333;
-  padding-bottom: 5px;
-  margin-bottom: 20px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-}
-.stat-label { color: #777; }
-.stat-val { color: #fff; }
-
-/* Settings Buttons */
-.ui-btn {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 10px;
-  border: 1px solid #333;
-  background: #151515;
-  color: #ccc;
-  font-family: var(--font-tech);
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  transition: 0.2s;
-  border-radius: 2px;
-}
-.ui-btn:hover {
-  background: #222;
-  border-color: #555;
-  color: #fff;
-}
-.ui-btn.primary {
-  border-color: var(--color-main);
-  color: var(--color-main);
-}
-.ui-btn.primary:hover {
-  background: var(--color-main);
-  color: #000;
-}
-.ui-btn.danger {
-  border-color: var(--color-danger);
-  color: var(--color-danger);
-}
-.ui-btn.danger:hover {
-  background: var(--color-danger);
-  color: #fff;
-  box-shadow: 0 0 15px var(--color-danger);
-}
-
-.danger-zone {
-  margin-top: 40px;
-  padding: 20px;
-  border: 1px dashed #444;
-  background: rgba(255, 46, 99, 0.05);
-}
-
-.sidebar-footer {
-  padding: 15px;
-  text-align: center;
-  font-size: 0.7rem;
-  color: #444;
-  border-top: 1px solid #111;
-  background: #050505;
-}
-
-/* =========================================
-   Float Menu Button
-   ========================================= */
-.float-menu-btn {
-  position: absolute;
-  top: 20px; right: 20px;
-  background: rgba(0,0,0,0.8);
-  border: 1px solid var(--color-main);
-  color: var(--color-main);
-  padding: 10px 20px;
-  border-radius: 30px;
-  font-family: var(--font-tech);
-  font-weight: bold;
-  text-transform: uppercase;
-  cursor: pointer;
-  z-index: 50;
-  display: none;
-  backdrop-filter: blur(5px);
-}
-.app-wrapper.closed .float-menu-btn { display: block; }
-.float-menu-btn:hover {
-  background: var(--color-main);
-  color: #000;
-  box-shadow: 0 0 15px var(--color-main);
-}
-
-/* =========================================
-   Effects (Glitch / Crunch)
-   ========================================= */
-.glitch-overlay {
-  position: fixed; top:0; left:0; width:100%; height:100%;
-  pointer-events: none; z-index: 9999;
-  mix-blend-mode: hard-light;
-  opacity: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 255, 157, 0.1) 2px,
-    rgba(0, 255, 157, 0.1) 4px
-  );
-}
-body.glitched .glitch-overlay { opacity: 0.3; animation: flashNoise 0.1s infinite; }
-body.glitched {
-  animation: shake 0.2s infinite;
-}
-
-@keyframes shake {
-  0% { transform: translate(1px, 1px) rotate(0deg); }
-  10% { transform: translate(-1px, -2px) rotate(-1deg); }
-  20% { transform: translate(-3px, 0px) rotate(1deg); }
-  30% { transform: translate(3px, 2px) rotate(0deg); }
-  40% { transform: translate(1px, -1px) rotate(1deg); }
-  50% { transform: translate(-1px, 2px) rotate(-1deg); }
-  60% { transform: translate(-3px, 1px) rotate(0deg); }
-  70% { transform: translate(3px, 1px) rotate(-1deg); }
-  80% { transform: translate(-1px, -1px) rotate(1deg); }
-  90% { transform: translate(1px, 2px) rotate(0deg); }
-  100% { transform: translate(1px, -2px) rotate(-1deg); }
-}
-
-/* Big Crunch Overlay */
-.crunch-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: #fff;
-  z-index: 10000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  animation: crunchImplode 4s forwards cubic-bezier(0.6, -0.28, 0.735, 0.045);
-}
-
-.crunch-message h1 {
-  color: #000;
-  font-size: 4rem;
-  font-weight: 900;
-  letter-spacing: 20px;
-  animation: textGlitch 0.3s infinite;
-}
-.crunch-message p {
-  color: #333;
-  font-family: var(--font-mono);
-  letter-spacing: 2px;
-}
-
-@keyframes crunchImplode {
-  0% { background: transparent; backdrop-filter: blur(0px); transform: scale(1); }
-  20% { background: #fff; transform: scale(1.1); }
-  40% { background: #fff; }
-  90% { background: #000; transform: scale(0.001); opacity: 1; }
-  100% { background: #000; transform: scale(0); opacity: 1; }
-}
-
-/* Mobile Response */
-@media (max-width: 768px) {
-  .sidebar { position: absolute; right: 0; height: 100%; }
-  .game-panel { padding: 10px; }
-  .currency-container h2 { font-size: 2.5rem; }
-  .generator-row { padding: 10px; flex-wrap: wrap; }
-  .btn-group { width: 100%; flex-direction: row; margin-top: 10px; }
-  .btn-group button { flex: 1; }
-}
-/* =========================================
-   High-Tech Sidebar Styling
-   ========================================= */
-
-/* サイドバー全体: 制御パネル風の質感 */
-.sidebar {
-  width: 380px; /* 幅を少し広げて見やすく */
-  background: linear-gradient(
-    to bottom, 
-    rgba(10, 10, 12, 0.95), 
-    rgba(5, 5, 7, 0.98)
-  );
   border-left: 1px solid rgba(0, 255, 157, 0.2);
-  display: flex;
-  flex-direction: column;
-  z-index: 100;
-  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  display: flex; flex-direction: column;
+  z-index: 2000;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   box-shadow: -10px 0 50px rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(10px);
 }
 
-/* 背景にハイテクなグリッドパターンを追加 */
+/* Sidebar Grid Pattern */
 .sidebar::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 20px 20px;
-  pointer-events: none;
-  z-index: -1;
-}
-
-/* サイドバーが隠れている時 */
-.app-wrapper.closed .sidebar {
-  transform: translateX(380px);
-  margin-right: -380px;
-}
-
-/* --- ヘッダー & タブエリア --- */
-.sidebar-header {
-  height: 70px;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: flex-end; /* タブを下揃えに */
-  border-bottom: 1px solid rgba(0, 255, 157, 0.1);
-  padding: 0 10px;
-  position: relative;
-}
-
-.tab-container {
-  flex: 1;
-  display: flex;
-  gap: 5px;
-}
-
-.tab-btn {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-bottom: none;
-  color: #666;
-  font-weight: 600;
-  font-family: var(--font-tech);
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 12px 0;
-  cursor: pointer;
-  transition: all 0.3s;
-  position: relative;
-  clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px); /* 角を落とす */
-}
-
-.tab-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-}
-
-.tab-btn.active {
-  background: linear-gradient(to top, rgba(0, 255, 157, 0.1), transparent);
-  color: var(--color-main);
-  border-color: var(--color-main);
-  border-bottom: none;
-  text-shadow: 0 0 8px var(--color-main);
-}
-/* アクティブタブの上部に光るライン */
-.tab-btn.active::before {
-  content: "";
-  position: absolute; top: 0; left: 0; width: 100%; height: 2px;
-  background: var(--color-main);
-  box-shadow: 0 0 10px var(--color-main);
-}
-
-/* 閉じるボタン */
-.close-btn {
-  width: 40px; height: 40px;
-  margin-bottom: 10px;
-  background: transparent;
-  border: 1px solid transparent;
-  color: #444;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: 0.2s;
-  display: flex; align-items: center; justify-content: center;
-}
-.close-btn:hover {
-  color: var(--color-danger);
-  border-color: var(--color-danger);
-  box-shadow: 0 0 10px rgba(255, 46, 99, 0.3);
-}
-
-/* --- コンテンツエリア --- */
-.sidebar-body {
-  padding: 30px 25px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #333 #000;
-}
-
-/* セクション見出し */
-.sidebar h3 {
-  color: #fff;
-  font-size: 0.85rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 8px;
-  margin-bottom: 20px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-}
-
-/* 見出しの装飾四角 */
-.sidebar h3::before {
-  content: "";
-  display: inline-block;
-  width: 8px; height: 8px;
-  background: var(--color-main);
-  margin-right: 10px;
-  box-shadow: 0 0 8px var(--color-main);
-}
-
-/* 統計の行デザイン */
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.02); /* 薄い背景 */
-  border-left: 2px solid transparent;
-  transition: 0.2s;
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-}
-.stat-row:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-left-color: var(--color-main);
-}
-
-.stat-label { color: #888; font-size: 0.8rem; }
-.stat-val { color: var(--text-primary); font-weight: bold; }
-
-/* --- 設定エリアのコンポーネント --- */
-
-/* セレクトボックスの装飾 */
-.select-wrapper {
-  position: relative;
-  border: 1px solid #444;
-  background: #111;
-  border-radius: 2px;
-}
-.select-wrapper::after {
-  content: "▼";
-  position: absolute; right: 10px; top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.6rem; color: var(--color-main);
-  pointer-events: none;
-}
-select {
-  width: 100%;
-  background: transparent;
-  color: #fff;
-  border: none;
-  padding: 10px;
-  appearance: none;
-  font-family: var(--font-mono);
-  cursor: pointer;
-}
-select:focus { outline: none; background: #222; }
-
-/* UIボタン (設定・セーブなど) */
-.ui-btn {
-  width: 100%;
-  padding: 14px;
-  margin-bottom: 12px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: linear-gradient(45deg, #151515, #1a1a1a);
-  color: #aaa;
-  font-family: var(--font-tech);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  transition: all 0.2s;
-  position: relative;
-  overflow: hidden;
-  /* 斜めに角をカット */
-  clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
-}
-
-.ui-btn:hover {
-  color: #fff;
-  border-color: rgba(255,255,255,0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-}
-
-/* プライマリボタン (セーブ) */
-.ui-btn.primary {
-  border-color: rgba(0, 255, 157, 0.3);
-  color: var(--color-main);
-}
-.ui-btn.primary:hover {
-  background: rgba(0, 255, 157, 0.1);
-  box-shadow: 0 0 20px rgba(0, 255, 157, 0.2);
-  text-shadow: 0 0 5px var(--color-main);
-}
-
-/* セーブステータス */
-.status-text {
-  text-align: right;
-  font-size: 0.75rem;
-  color: #555;
-  font-family: var(--font-mono);
-  margin-bottom: 20px;
-  height: 1em;
-}
-
-/* --- Danger Zone --- */
-.danger-zone {
-  margin-top: 40px;
-  padding: 20px;
-  border: 1px solid var(--color-danger);
-  background: repeating-linear-gradient(
-    45deg,
-    rgba(255, 46, 99, 0.05),
-    rgba(255, 46, 99, 0.05) 10px,
-    rgba(0, 0, 0, 0.2) 10px,
-    rgba(0, 0, 0, 0.2) 20px
-  );
-  position: relative;
-}
-
-.danger-zone h4 {
-  color: var(--color-danger);
-  margin: 0 0 10px 0;
-  font-size: 1rem;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-
-.ui-btn.danger {
-  border-color: var(--color-danger);
-  color: var(--color-danger);
-  background: rgba(0,0,0,0.6);
-}
-.ui-btn.danger:hover {
-  background: var(--color-danger);
-  color: #fff;
-  box-shadow: 0 0 20px var(--color-danger);
-}
-
-/* --- インポート/エクスポート エリア --- */
-#io-area textarea {
-  background-color: #050505;
-  border: 1px solid #333;
-  color: var(--color-main);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  padding: 10px;
-  resize: vertical;
-  border-radius: 4px;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
-}
-#io-area textarea:focus {
-  outline: none;
-  border-color: var(--color-main);
-}
-
-/* --- フッター --- */
-.sidebar-footer {
-  padding: 15px;
-  text-align: center;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: #444;
-  border-top: 1px solid rgba(255,255,255,0.05);
-  background: #020202;
-}
-/* =========================================
-   SIDEBAR FIX (Functional & Visual)
-   ========================================= */
-
-/* サイドバーの基本配置: 画面右側に「固定(fixed)」することでレイアウト崩れを防ぐ */
-.sidebar {
-  position: fixed;        /* フレックスボックスから切り離して固定 */
-  top: 0;
-  right: 0;
-  width: 350px;           /* 幅 */
-  height: 100vh;          /* 画面の高さ一杯 */
-  background: rgba(10, 10, 12, 0.95); /* 背景色（半透明） */
-  border-left: 1px solid var(--color-main);
-  box-shadow: -10px 0 50px rgba(0, 0, 0, 0.8);
-  
-  /* 配置とアニメーション */
-  z-index: 2000;          /* 最前面に表示 (クランチ演出よりは下、ゲームより上) */
-  transform: translateX(0); /* デフォルトで表示（位置 0） */
-  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-  
-  display: flex;
-  flex-direction: column;
-  backdrop-filter: blur(10px); /* すりガラス効果 */
-}
-
-/* 背景のグリッド装飾 */
-.sidebar::before {
-  content: "";
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   background-image: linear-gradient(rgba(0, 255, 157, 0.03) 1px, transparent 1px),
                     linear-gradient(90deg, rgba(0, 255, 157, 0.03) 1px, transparent 1px);
   background-size: 30px 30px;
-  pointer-events: none;
-  z-index: -1;
+  pointer-events: none; z-index: -1;
 }
 
-/* --- 閉じた状態の挙動 --- */
-/* .app-wrapper に .closed クラスがついたら画面外(右)へ移動 */
-.app-wrapper.closed .sidebar {
-  transform: translateX(100%); /* 右へ100%移動（隠れる） */
-  box-shadow: none;
-}
+/* Closed State */
+.app-wrapper.closed .sidebar { transform: translateX(100%); box-shadow: none; }
 
-/* メイン画面の幅調整（PCの場合、サイドバーが開いているときは右に余白を作る） */
-@media (min-width: 769px) {
-  .app-wrapper {
-    transition: margin-right 0.4s ease;
-    margin-right: 350px; /* サイドバーの分だけ空ける */
-  }
-  .app-wrapper.closed {
-    margin-right: 0;     /* 閉じたら元に戻す */
-  }
-}
-
-/* --- サイドバー内部のヘッダー --- */
+/* Sidebar Header */
 .sidebar-header {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  padding: 0 15px;
-  background: rgba(0, 0, 0, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  flex-shrink: 0; /* 縮まないようにする */
+  height: 70px; display: flex; align-items: flex-end;
+  padding: 0 10px; background: rgba(0, 0, 0, 0.5);
+  border-bottom: 1px solid rgba(0, 255, 157, 0.1);
 }
 
-/* タブ切り替えボタン */
-.tab-container {
-  flex: 1;
-  display: flex;
-  gap: 10px;
-}
+.tab-container { flex: 1; display: flex; gap: 5px; }
 
 .tab-btn {
-  flex: 1;
-  padding: 8px 0;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #888;
-  font-family: var(--font-tech);
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.3s;
+  flex: 1; padding: 12px 0;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05); border-bottom: none;
+  color: #666; font-family: var(--font-tech); text-transform: uppercase;
+  cursor: pointer; transition: all 0.3s;
   clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
 }
-
-.tab-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
-
+.tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
 .tab-btn.active {
-  background: rgba(0, 255, 157, 0.15);
-  color: var(--color-main);
-  border-color: var(--color-main);
-  box-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
+  background: linear-gradient(to top, rgba(0, 255, 157, 0.1), transparent);
+  color: var(--color-main); border-color: var(--color-main);
+  text-shadow: 0 0 8px var(--color-main);
+}
+.tab-btn.active::before {
+  content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+  background: var(--color-main); box-shadow: 0 0 10px var(--color-main);
 }
 
-/* 閉じるボタン (×) */
 .close-btn {
-  width: 30px; height: 30px;
-  margin-left: 10px;
-  background: transparent;
-  border: none;
-  color: #666;
-  font-size: 1.5rem;
-  cursor: pointer;
+  width: 40px; height: 40px; margin-bottom: 10px;
+  background: transparent; border: none; color: #444; font-size: 1.2rem;
+  cursor: pointer; transition: 0.2s;
   display: flex; align-items: center; justify-content: center;
-  transition: color 0.2s;
 }
-.close-btn:hover { color: var(--color-danger); }
+.close-btn:hover { color: var(--color-danger); text-shadow: 0 0 10px var(--color-danger); }
 
+/* Sidebar Body */
+.sidebar-body { flex: 1; overflow-y: auto; padding: 30px 25px; }
 
-/* --- サイドバーの中身 (スクロールエリア) --- */
-.sidebar-body {
-  flex: 1;
-  overflow-y: auto; /* 縦スクロール有効化 */
-  padding: 20px;
-}
-
-/* コンテンツの表示制御 (タブ切り替え用) */
-.sidebar-content {
-  display: none; /* 基本非表示 */
-  animation: fadeIn 0.3s ease;
-}
-.sidebar-content.active {
-  display: block; /* activeクラスがついたら表示 */
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-
-/* --- 「メニュー」ボタン (サイドバーを開くボタン) --- */
-/* 最初は非表示、.closedの時だけ表示 */
-.float-menu-btn {
-  position: fixed;
-  top: 20px; right: 20px;
-  z-index: 1500;
-  
-  padding: 10px 25px;
-  background: rgba(0, 0, 0, 0.8);
-  border: 1px solid var(--color-main);
-  color: var(--color-main);
-  font-family: var(--font-tech);
-  font-weight: bold;
-  text-transform: uppercase;
-  cursor: pointer;
-  
-  opacity: 0;          /* デフォルトは見えない */
-  pointer-events: none; /* 押せない */
-  transform: translateY(-10px);
-  transition: all 0.3s;
-}
-
-/* サイドバーが閉じている(.closed)時だけ、メニューボタンを表示 */
-.app-wrapper.closed .float-menu-btn {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
-}
-.app-wrapper.closed .float-menu-btn:hover {
-  background: var(--color-main);
-  color: #000;
-  box-shadow: 0 0 15px var(--color-main);
-}
-
-/* --- モバイル対応 --- */
-@media (max-width: 768px) {
-  .sidebar {
-    width: 100%; /* スマホなら全幅 */
-  }
-  .app-wrapper {
-    margin-right: 0; /* スマホでは横並びにしない */
-  }
-}
-/* =========================================
-   SIDEBAR CONTENT FIX (中身の整形)
-   ========================================= */
-
-/* サイドバー内の要素すべての基準 */
-.sidebar-body * {
-  box-sizing: border-box;
-}
-
-/* 1. 見出し (H3) のデザイン修正 */
 .sidebar h3 {
-  margin: 25px 0 15px 0; /* 上下に余白を開ける */
-  padding-bottom: 5px;
-  border-bottom: 1px solid var(--color-main); /* 下線 */
-  color: var(--color-main);
-  font-size: 0.9rem;
-  letter-spacing: 2px;
-  text-transform: uppercase;
+  color: var(--color-main); font-size: 0.9rem;
+  border-bottom: 1px solid var(--color-main);
+  padding-bottom: 5px; margin: 25px 0 15px 0;
+  letter-spacing: 2px; text-transform: uppercase;
 }
-/* 最初の見出しだけ上の余白を消す */
-.sidebar h3:first-child {
-  margin-top: 0;
-}
+.sidebar h3:first-child { margin-top: 0; }
 
-/* 2. 統計データの行 (Stat Row) を横並びにする */
-/* これがないと「経過時間」と「00:00」がくっつきます */
 .stat-row {
-  display: flex;               /* 横並びにする */
-  justify-content: space-between; /* 左端と右端に配置 */
-  align-items: center;         /* 縦位置を中央揃え */
-  padding: 8px 0;              /* 上下の隙間 */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* 薄い区切り線 */
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
 }
+.stat-label { color: #888; font-size: 0.9rem; }
+.stat-val { color: #fff; font-family: var(--font-mono); font-weight: bold; }
 
-.stat-label {
-  color: #888;
-  font-size: 0.9rem;
-}
-
-.stat-val {
-  color: #fff;
-  font-family: var(--font-mono); /* 等幅フォントで数字を揃える */
-  font-weight: bold;
-  text-align: right;
-}
-
-/* 3. 設定エリアのグループ分け */
-.setting-group {
-  margin-bottom: 20px;       /* グループごとの間隔 */
-  padding: 15px;
-  background: rgba(255, 255, 255, 0.03); /* 少し明るい背景 */
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.setting-label {
-  display: block;            /* ブロック要素にして改行させる */
-  margin-bottom: 8px;
-  color: #aaa;
-  font-size: 0.8rem;
-}
-
-/* 4. セレクトボックス（プルダウン）の整形 */
-.select-wrapper {
-  width: 100%;
-  position: relative;
-}
-
+/* Settings & UI Elements */
+.select-wrapper { width: 100%; position: relative; margin-bottom: 10px; }
 select {
-  width: 100%;
-  padding: 10px;
-  background: #111;
-  color: #fff;
-  border: 1px solid #444;
-  border-radius: 2px;
-  font-family: var(--font-mono);
-  cursor: pointer;
+  width: 100%; padding: 10px; background: #111; color: #fff;
+  border: 1px solid #444; font-family: var(--font-mono); cursor: pointer;
 }
 
-/* 5. ボタンのデザイン修正 */
 .ui-btn {
-  display: block;            /* ブロック要素にする */
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  background: #222;
-  color: #fff;
-  border: 1px solid #555;
-  cursor: pointer;
-  text-transform: uppercase;
-  font-weight: bold;
-  transition: 0.2s;
+  width: 100%; padding: 12px; margin-top: 10px;
+  background: #222; color: #aaa; border: 1px solid #555;
+  font-family: var(--font-tech); font-weight: 600; text-transform: uppercase;
+  transition: all 0.2s; cursor: pointer;
 }
-.ui-btn:hover {
-  background: #333;
-  border-color: #888;
-}
+.ui-btn:hover { background: #333; color: #fff; border-color: #888; }
 
 .ui-btn.primary {
-  border-color: var(--color-main);
-  color: var(--color-main);
-  background: rgba(0, 255, 157, 0.1);
+  border-color: var(--color-main); color: var(--color-main);
+  background: rgba(0, 255, 157, 0.05);
 }
 .ui-btn.primary:hover {
-  background: var(--color-main);
-  color: #000;
+  background: var(--color-main); color: #000; box-shadow: 0 0 20px rgba(0,255,157,0.3);
 }
 
 .ui-btn.danger {
-  border-color: var(--color-danger);
-  color: var(--color-danger);
-  background: rgba(255, 46, 99, 0.1);
+  border-color: var(--color-danger); color: var(--color-danger);
+  background: rgba(255, 46, 99, 0.05);
 }
 .ui-btn.danger:hover {
-  background: var(--color-danger);
-  color: #fff;
+  background: var(--color-danger); color: #fff; box-shadow: 0 0 20px var(--color-danger);
 }
 
-/* 6. テキストエリアの整形 */
-#save-textarea {
-  width: 100%;
+#io-area textarea {
+  width: 100%; height: 100px; background: #050505; border: 1px solid #333;
+  color: var(--color-main); font-family: monospace; padding: 10px; resize: vertical;
+}
+
+.sidebar-footer {
+  padding: 15px; text-align: center; font-size: 0.7rem; color: #444;
+  border-top: 1px solid rgba(255,255,255,0.05); background: #020202;
+}
+
+/* Float Menu Button */
+.float-menu-btn {
+  position: fixed; top: 20px; right: 20px; z-index: 1500;
+  padding: 10px 25px; background: rgba(0, 0, 0, 0.8);
+  border: 1px solid var(--color-main); color: var(--color-main);
+  font-family: var(--font-tech); font-weight: bold; text-transform: uppercase;
+  cursor: pointer; opacity: 0; pointer-events: none;
+  transform: translateY(-10px); transition: all 0.3s;
+}
+.app-wrapper.closed .float-menu-btn { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.float-menu-btn:hover { background: var(--color-main); color: #000; box-shadow: 0 0 15px var(--color-main); }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .sidebar { width: 100%; }
+  .app-wrapper { margin-right: 0; }
+  .game-panel { padding: 10px; }
+  .currency-container h2 { font-size: 2.5rem; }
+}
+
+/* =========================================
+   10. SUPER BIG CRUNCH EFFECT (Updated)
+   ========================================= */
+
+/* Main Overlay Container */
+.crunch-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: #000;
-  border: 1px solid #333;
-  color: var(--color-main);
-  font-family: monospace;
-  margin-bottom: 10px;
-  padding: 5px;
+  z-index: 10000;
+  display: flex; justify-content: center; align-items: center; flex-direction: column;
+  /* Start hidden */
+  pointer-events: none; opacity: 0;
 }
 
+/* Active State (triggered by JS) */
+.crunch-overlay.active {
+  pointer-events: all;
+  opacity: 1;
+  animation: crunchSequence 6s forwards; /* Controls main background */
+}
+
+/* The Singularity (Center glowing orb) */
+.singularity {
+  position: absolute;
+  width: 2px; height: 2px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0px #fff;
+  transform: scale(0);
+  opacity: 0;
+}
+.crunch-overlay.active .singularity {
+  animation: singularityImplode 4s cubic-bezier(0.7, 0, 0.2, 1) forwards;
+}
+
+/* The Event Horizon (Ring sucking in) */
+.event-horizon {
+  position: absolute;
+  width: 100vmax; height: 100vmax;
+  border: 50px solid var(--color-infinity);
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(2);
+}
+.crunch-overlay.active .event-horizon {
+  animation: horizonCollapse 3.5s cubic-bezier(0.6, 0, 0.2, 1) forwards;
+}
+
+/* Text Container */
+.crunch-message {
+  position: relative; z-index: 10;
+  text-align: center; opacity: 0;
+}
+.crunch-overlay.active .crunch-message {
+  animation: messageAppear 0.5s linear 4.5s forwards; /* Appears after flash */
+}
+
+.crunch-message h1 {
+  color: #fff; font-size: 4rem; font-weight: 900;
+  letter-spacing: 15px; text-transform: uppercase;
+  text-shadow: 0 0 20px var(--color-infinity);
+  margin: 0;
+}
+.crunch-message p {
+  color: var(--color-main); font-family: var(--font-mono);
+  letter-spacing: 3px; font-size: 1.2rem;
+  margin-top: 10px;
+  border-right: 2px solid var(--color-main);
+  white-space: nowrap; overflow: hidden;
+  animation: typing 2s steps(40, end) infinite;
+}
+
+/* --- ANIMATIONS --- */
+
+/* 1. Background dims, then flashes white, then total black */
+@keyframes crunchSequence {
+  0% { background: rgba(0,0,0,0); backdrop-filter: blur(0px); }
+  20% { background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
+  85% { background: #000; } 
+  90% { background: #fff; } /* The Big Bang Flash */
+  100% { background: #000; }
+}
+
+/* 2. Ring collapses inward */
+@keyframes horizonCollapse {
+  0% { opacity: 0; transform: scale(2); border-color: var(--color-main); }
+  20% { opacity: 0.5; }
+  80% { opacity: 1; transform: scale(0.1); border-color: var(--color-infinity); border-width: 2px; }
+  100% { opacity: 0; transform: scale(0); }
+}
+
+/* 3. Singularity grows slightly then vanishes instantly */
+@keyframes singularityImplode {
+  0% { opacity: 0; transform: scale(0); box-shadow: 0 0 0 var(--color-infinity); }
+  50% { opacity: 1; transform: scale(20); box-shadow: 0 0 50px var(--color-infinity); }
+  85% { transform: scale(1); box-shadow: 0 0 100px #fff; background: #fff; }
+  90% { transform: scale(300); opacity: 1; } /* Explosion size */
+  91% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* 4. Text appears */
+@keyframes messageAppear {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+実装のポイント
+演出を再生するには、HTML側に以下の構造を追加し、JavaScriptでクラスを付与してください。
+
+HTMLへの追加
+<div id="crunch-overlay" class="crunch-overlay">
+  <div class="event-horizon"></div>
+  <div class="singularity"></div>
+  <div class="crunch-message">
+    <h1>BIG CRUNCH</h1>
+    <p>REWRITING UNIVERSE DATA...</p>
+  </div>
+</div>
+JavaScriptでの呼び出し（例）
+ビッグクランチ実行時に以下のJSを実行すると演出が始まります。
+
+function triggerBigCrunch() {
+  const overlay = document.getElementById('crunch-overlay');
+  
+  // 1. アニメーション開始
+  overlay.classList.add('active');
+  
+  // 2. 画面が白く光った瞬間(約5秒後)に内部データをリセット
+  setTimeout(() => {
+     // ここにゲームリセットのロジックを入れる (resetGame() など)
+     console.log("Universe Reset!");
+  }, 5000);
+
+  // 3. 演出終了（必要ならクラスを外すか、画面をリロードする）
+  setTimeout(() => {
+     overlay.classList.remove('active');
+  }, 8000);
+}
+
+
+
+
+
+Evaluate
+
+Compare
