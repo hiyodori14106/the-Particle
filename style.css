@@ -623,82 +623,30 @@ select {
   to { width: 100%; }
 }
 /* =========================================
-   TAB SWITCHING FIX (Add to end of CSS)
+   TAB SYSTEM FIX (ここに貼り付け)
    ========================================= */
 
-/* 1. 基本的にタブの中身はすべて隠す */
+/* 1. まず、すべてのタブの中身を「強制的に」隠す */
 .sidebar-content {
-  display: none;
-  opacity: 0;
-}
-
-/* 2. 'active' クラスがついているタブだけを表示する */
-.sidebar-content.active {
-  display: block;
-  opacity: 1;
-  animation: tabSlideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-/* 3. 切り替え時の「フワッ」と出てくるアニメーション */
-@keyframes tabSlideIn {
-  from {
+    display: none !important;
     opacity: 0;
-    transform: translateY(10px); /* 少し下から */
-  }
-  to {
+}
+
+/* 2. 'active' クラスがついているタブだけを「強制的に」表示する */
+.sidebar-content.active {
+    display: block !important;
     opacity: 1;
-    transform: translateY(0);    /* 定位置へ */
-  }
+    animation: tabFadeIn 0.4s ease forwards;
 }
 
-/* --- レイアウト崩れ補正（念のため） --- */
-
-/* 統計データの行をきれいに左右に分ける */
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* 設定項目の間隔を整える */
-.setting-group {
-  margin-bottom: 20px;
-  padding: 15px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-}
-実装のポイント
-演出を再生するには、HTML側に以下の構造を追加し、JavaScriptでクラスを付与してください。
-
-HTMLへの追加
-<div id="crunch-overlay" class="crunch-overlay">
-  <div class="event-horizon"></div>
-  <div class="singularity"></div>
-  <div class="crunch-message">
-    <h1>BIG CRUNCH</h1>
-    <p>REWRITING UNIVERSE DATA...</p>
-  </div>
-</div>
-JavaScriptでの呼び出し（例）
-ビッグクランチ実行時に以下のJSを実行すると演出が始まります。
-
-function triggerBigCrunch() {
-  const overlay = document.getElementById('crunch-overlay');
-  
-  // 1. アニメーション開始
-  overlay.classList.add('active');
-  
-  // 2. 画面が白く光った瞬間(約5秒後)に内部データをリセット
-  setTimeout(() => {
-     // ここにゲームリセットのロジックを入れる (resetGame() など)
-     console.log("Universe Reset!");
-  }, 5000);
-
-  // 3. 演出終了（必要ならクラスを外すか、画面をリロードする）
-  setTimeout(() => {
-     overlay.classList.remove('active');
-  }, 8000);
+/* 3. 切り替え時のアニメーション定義 */
+@keyframes tabFadeIn {
+    0% { 
+        opacity: 0; 
+        transform: translateY(10px); 
+    }
+    100% { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
 }
