@@ -1,616 +1,708 @@
 /* =========================================
-   Base Styles & Variables
+   Google Fonts Import
+   ========================================= */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Roboto+Mono:wght@300;500;700&display=swap');
+
+/* =========================================
+   Variables & Theme
    ========================================= */
 :root {
-  --bg-color: #0d0d0d;        /* 背景色：ほぼ黒 */
-  --sidebar-bg: #111;         /* サイドバー背景 */
-  --text-main: #e0e0e0;       /* メインテキスト */
-  --text-sub: #888;           /* サブテキスト */
-  --border-color: #333;       /* 枠線 */
-  --accent-color: #00e676;    /* アクセント（緑：生産など） */
-  --danger-color: #ff4444;    /* 警告色（赤） */
-  --infinity-color: #b388ff;  /* Infinity用（紫） */
-  --shift-color: #00e5ff;     /* Shift用（シアン） */
-  --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+  /* Colors */
+  --bg-core: #050507;
+  --bg-panel: rgba(20, 20, 25, 0.7);
+  --bg-sidebar: #0a0a0c;
+  
+  --color-main: #00ff9d;       /* Cyber Green */
+  --color-accent: #00bcd4;     /* Hologram Blue */
+  --color-gold: #ffb300;       /* Prestige Gold */
+  --color-danger: #ff2e63;     /* Warning Red */
+  --color-infinity: #d500f9;   /* Cosmic Purple */
+  
+  --text-primary: #e0e0e0;
+  --text-dim: #6c757d;
+
+  --border-tech: 1px solid rgba(255, 255, 255, 0.1);
+  
+  /* Fonts */
+  --font-tech: 'Rajdhani', sans-serif;
+  --font-mono: 'Roboto Mono', monospace;
+}
+
+/* =========================================
+   Global Reset & Base Styles
+   ========================================= */
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  font-family: "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--bg-core);
+  background-image: 
+    radial-gradient(circle at 50% 50%, #111 0%, #000 100%);
+  color: var(--text-primary);
+  font-family: var(--font-tech);
   margin: 0;
   height: 100vh;
-  overflow: hidden; /* スクロールバーを消す（アプリ風） */
+  overflow: hidden;
   display: flex;
 }
 
-/* 全体レイアウト */
+/* CRT Scanline Effect (Background) */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #000;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-main);
+}
+
+/* =========================================
+   Layout Containers
+   ========================================= */
 .app-wrapper {
   display: flex;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  position: relative;
-}
-
-/* メインゲーム画面 */
-.game-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  overflow: hidden;
   position: relative;
   z-index: 1;
 }
 
+.game-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 40px;
+  overflow: hidden;
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
 /* =========================================
-   Header & Currency
+   Header & Display
    ========================================= */
 header {
   text-align: center;
-  margin-bottom: 15px;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 10px;
+  margin-bottom: 30px;
+  position: relative;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(0, 255, 157, 0.1);
+}
+
+header::after {
+  content: "";
+  position: absolute;
+  bottom: -1px; left: 50%;
+  width: 0%; height: 1px;
+  background: var(--color-main);
+  transition: width 0.5s ease;
+  transform: translateX(-50%);
+  box-shadow: 0 0 10px var(--color-main);
+}
+header:hover::after {
+  width: 80%;
 }
 
 h1 {
-  margin: 0;
-  font-size: 1.2rem;
-  letter-spacing: 4px;
-  opacity: 0.5;
-  font-weight: 300;
+  font-size: 1rem;
+  letter-spacing: 0.5em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  opacity: 0.7;
 }
 
 .currency-container h2 {
   font-family: var(--font-mono);
-  font-size: 2.5rem;
-  margin: 10px 0 5px 0;
-  text-shadow: 0 0 15px rgba(0, 230, 118, 0.3);
-  letter-spacing: 1px;
-  transition: color 0.2s;
+  font-size: 3.5rem;
+  margin: 0;
+  font-weight: 300;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(0, 255, 157, 0.4);
 }
 
 #pps-display {
-  color: var(--text-sub);
-  margin: 0;
   font-family: var(--font-mono);
-  font-size: 0.9rem;
+  color: var(--color-main);
+  font-size: 1rem;
+  margin-top: 5px;
+  opacity: 0.8;
 }
 
-/* Infinity Point 表示エリア */
+/* Infinity Point Display */
 #ip-display-container {
-  margin-top: 8px;
-  animation: pulsePurple 3s infinite ease-in-out;
+  margin-top: 15px;
+  padding: 5px 15px;
+  background: rgba(213, 0, 249, 0.1);
+  border: 1px solid var(--color-infinity);
+  display: inline-block;
+  border-radius: 20px;
+  box-shadow: 0 0 15px rgba(213, 0, 249, 0.2);
+  animation: pulseInfinity 3s infinite ease-in-out;
 }
 #ip-val {
   font-family: var(--font-mono);
-  font-size: 1.3rem;
-  text-shadow: 0 0 10px var(--infinity-color);
+  font-weight: bold;
+  color: #fff;
 }
-
-@keyframes pulsePurple {
-  0% { opacity: 0.7; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
-  100% { opacity: 0.7; transform: scale(1); }
-}
-
-/* シフト情報バー */
-.shift-bar {
-  text-align: center;
-  font-size: 0.85rem;
-  color: #ccc;
-  background: #1a1a1a;
-  padding: 8px;
-  border-radius: 4px;
-  margin-bottom: 15px;
-  border: 1px solid #333;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+@keyframes pulseInfinity {
+  0%, 100% { box-shadow: 0 0 10px rgba(213, 0, 249, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(213, 0, 249, 0.6); }
 }
 
 /* =========================================
-   Controls (Buy Amount)
+   Status Bars (Shift / Control)
    ========================================= */
-.control-bar {
+.shift-bar {
+  background: rgba(0, 188, 212, 0.1);
+  border-left: 3px solid var(--color-accent);
+  padding: 10px 20px;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 15px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  box-shadow: 0 0 20px rgba(0, 188, 212, 0.05);
+}
+
+.control-bar {
+  display: flex;
   justify-content: flex-end;
-  margin-bottom: 10px;
-  padding: 0 5px;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding-bottom: 10px;
 }
 
 .control-label {
   font-size: 0.8rem;
-  color: var(--text-sub);
-  margin-right: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-right: 15px;
+  color: var(--text-dim);
 }
 
 .toggle-group {
   display: flex;
-  background: #222;
+  background: #111;
   border-radius: 4px;
-  padding: 2px;
+  padding: 3px;
   border: 1px solid #333;
 }
 
 .toggle-btn {
   background: transparent;
   border: none;
-  color: #666;
-  padding: 4px 12px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  border-radius: 2px;
-  transition: 0.2s;
+  color: #777;
   font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 5px 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-radius: 2px;
 }
 .toggle-btn:hover { color: #fff; }
 .toggle-btn.active {
-  background: var(--accent-color);
+  background: var(--color-main);
   color: #000;
   font-weight: bold;
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
 }
 
 /* =========================================
-   Generator List
+   Generators List
    ========================================= */
 #generator-container {
   flex: 1;
   overflow-y: auto;
-  padding-right: 5px;
-  padding-bottom: 20px;
+  padding-right: 10px;
+  mask-image: linear-gradient(to bottom, black 90%, transparent 100%); /* Fade out at bottom */
 }
-
-/* スクロールバーのカスタマイズ */
-#generator-container::-webkit-scrollbar { width: 8px; }
-#generator-container::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
-#generator-container::-webkit-scrollbar-track { background: #111; }
 
 .generator-row {
-  background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
-  border-left: 3px solid var(--border-color);
-  margin-bottom: 8px;
-  padding: 12px 15px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  transition: all 0.2s;
-  border-radius: 0 4px 4px 0;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 10px;
+  padding: 15px 20px;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
 }
+
+/* Hover Effect */
 .generator-row:hover {
-  background: rgba(255,255,255,0.06);
-  border-left-color: var(--accent-color);
-  transform: translateX(2px);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(0, 255, 157, 0.3);
+  transform: translateX(5px);
+  box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+}
+.generator-row:hover::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 4px; height: 100%;
+  background: var(--color-main);
+  box-shadow: 0 0 10px var(--color-main);
 }
 
-.gen-info { flex-grow: 1; }
-
-.gen-name { 
-  font-size: 1rem; 
-  font-weight: bold; 
-  color: #ddd; 
-  display: flex; 
-  align-items: center; 
-  margin-bottom: 4px;
+.gen-info {
+  flex: 1;
 }
 
-.gen-amount { 
-  color: var(--text-sub); 
-  font-size: 0.85rem; 
+.gen-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #fff;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+}
+
+.gen-amount {
   font-family: var(--font-mono);
-}
-.gen-multiplier { 
-  color: var(--accent-color); 
-  font-size: 0.85rem; 
-  font-family: var(--font-mono);
-  margin-left: 10px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
 }
 
-/* オートバイヤーバッジ */
+.gen-multiplier {
+  font-family: var(--font-mono);
+  color: var(--color-main);
+  margin-left: 15px;
+  font-weight: bold;
+}
+
+/* Auto Badge */
 .auto-badge {
-  display: inline-block;
-  font-size: 0.65rem;
-  padding: 2px 6px;
-  border-radius: 3px;
+  font-family: var(--font-tech);
+  font-size: 0.7rem;
+  padding: 2px 8px;
   background: #1a1a1a;
+  border: 1px solid #333;
   color: #555;
   margin-left: 10px;
-  border: 1px solid #333;
-  transition: all 0.2s;
-  font-weight: normal;
-  cursor: default;
-  user-select: none;
-  font-family: var(--font-mono);
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+  transition: all 0.3s;
 }
-.auto-badge.clickable { 
-  cursor: pointer; 
-  border-color: #666; 
-  background: #2a2a2a; 
-  color: #aaa; 
+.auto-badge.clickable:hover {
+  border-color: #fff;
+  color: #fff;
 }
-.auto-badge.clickable:hover { 
-  background: #333; 
-  color: #fff; 
+.auto-badge.active {
+  background: rgba(0, 255, 157, 0.1);
+  border-color: var(--color-main);
+  color: var(--color-main);
+  box-shadow: 0 0 8px rgba(0, 255, 157, 0.2);
 }
-.auto-badge.active { 
-  background: rgba(0, 230, 118, 0.15); 
-  color: var(--accent-color); 
-  border-color: var(--accent-color); 
-  font-weight: bold; 
-  box-shadow: 0 0 5px rgba(0, 230, 118, 0.2);
-}
-.auto-badge.inactive { 
-  background: rgba(255, 68, 68, 0.1); 
-  color: #ff5252; 
-  border-color: #d32f2f; 
+.auto-badge.inactive {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  opacity: 0.7;
 }
 
 /* =========================================
-   Buttons
+   Buttons (Buy & Action)
    ========================================= */
-.btn-group { 
-  display: flex; 
-  flex-direction: column; 
-  gap: 6px; 
-  min-width: 150px; 
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 140px;
 }
 
-button { 
-  font-family: var(--font-mono); 
-  outline: none; 
-  cursor: pointer; 
-  user-select: none; 
+button {
+  outline: none;
+  cursor: pointer;
+  font-family: var(--font-tech);
+  text-transform: uppercase;
+  user-select: none;
 }
 
 .buy-btn {
-  background-color: transparent;
-  border: 1px solid var(--accent-color);
-  color: var(--accent-color);
-  padding: 6px 10px;
-  border-radius: 3px;
-  text-align: center;
-  font-weight: bold;
-  transition: all 0.1s;
-  font-size: 0.8rem;
+  background: transparent;
+  border: 1px solid var(--color-main);
+  color: var(--color-main);
+  padding: 8px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
 }
-.buy-btn:active { transform: translateY(1px); }
+.buy-btn::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 0%; height: 100%;
+  background: var(--color-main);
+  z-index: -1;
+  transition: width 0.2s ease;
+}
+.buy-btn:hover::before {
+  width: 100%;
+}
+.buy-btn:hover {
+  color: #000;
+  box-shadow: 0 0 15px rgba(0, 255, 157, 0.4);
+}
 
-.buy-btn:hover { 
-  background-color: var(--accent-color); 
-  color: #000; 
-  box-shadow: 0 0 10px var(--accent-color); 
+.buy-btn.max {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  font-size: 0.75rem;
 }
-.buy-btn.max { 
-  border-color: #29b6f6; 
-  color: #29b6f6; 
-}
+.buy-btn.max::before { background: var(--color-accent); }
 .buy-btn.max:hover { 
-  background-color: #29b6f6; 
-  color: #000; 
-  box-shadow: 0 0 10px #29b6f6; 
+  color: #000;
+  box-shadow: 0 0 15px rgba(0, 188, 212, 0.4);
 }
-.buy-btn.disabled { 
-  border-color: #444; 
-  color: #555; 
-  background-color: transparent; 
-  cursor: default; 
-  box-shadow: none; 
-  pointer-events: none; 
+
+.buy-btn.disabled {
+  border-color: #333;
+  color: #444;
+  background: transparent;
+  cursor: not-allowed;
+  box-shadow: none;
 }
+.buy-btn.disabled::before { display: none; }
 
 /* =========================================
-   Prestige (Reset) Banner
+   Prestige & Shift Banner
    ========================================= */
 .prestige-banner {
-  margin-bottom: 20px;
-  padding: 15px;
-  background: linear-gradient(45deg, rgba(255, 215, 0, 0.1), rgba(255, 160, 0, 0.1));
-  border: 1px solid #ffd700;
-  border-radius: 6px;
+  margin-bottom: 25px;
+  padding: 20px;
+  border: 1px solid var(--color-gold);
+  background: linear-gradient(45deg, rgba(255, 179, 0, 0.05), rgba(0,0,0,0.3));
+  position: relative;
+  overflow: hidden;
+  animation: borderPulse 4s infinite;
+}
+@keyframes borderPulse {
+  0%, 100% { box-shadow: inset 0 0 10px rgba(255, 179, 0, 0.1); }
+  50% { box-shadow: inset 0 0 30px rgba(255, 179, 0, 0.2); }
+}
+
+/* Tech corners for banner */
+.prestige-banner::before, .prestige-banner::after {
+  content: ""; position: absolute; width: 10px; height: 10px;
+  border: 2px solid var(--color-gold); transition: all 0.3s;
+}
+.prestige-banner::before { top: 0; left: 0; border-right: none; border-bottom: none; }
+.prestige-banner::after { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+.prestige-info {
   text-align: center;
-  animation: pulseBorder 3s infinite;
+  color: var(--color-gold);
+  font-size: 1rem;
+  margin-bottom: 15px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
-@keyframes pulseBorder {
-  0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.1); }
-  50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
-  100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.1); }
-}
-
-.prestige-info { 
-  color: #ffd700; 
-  font-size: 0.95rem; 
-  margin-bottom: 12px; 
-  font-weight: bold; 
-  font-family: var(--font-mono);
-}
-
 .prestige-actions {
   display: flex;
-  gap: 15px;
-  justify-content: center;
+  gap: 20px;
 }
 
 .prestige-btn {
   flex: 1;
-  background: linear-gradient(to bottom, #ffd700, #ffa000);
-  color: #000;
+  padding: 12px;
   border: none;
-  padding: 10px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: filter 0.2s;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  background: var(--color-gold);
+  color: #000;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: all 0.2s;
 }
-.prestige-btn:hover { filter: brightness(1.15); }
+.prestige-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px var(--color-gold);
+}
+.prestige-btn.disabled {
+  background: #333;
+  color: #555;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 
-/* シフト用の特別ボタンスタイル */
 .prestige-btn.shift-btn {
-  background: linear-gradient(to bottom, #00e5ff, #00b8d4);
-  border: 2px solid #fff;
-  box-shadow: 0 0 15px var(--shift-color);
-  animation: pulseCyan 2s infinite;
+  background: var(--color-accent);
+  color: #000;
   position: relative;
-  overflow: hidden;
+  animation: shiftGlow 3s infinite;
 }
-/* キラッと光る演出 */
-.prestige-btn.shift-btn::after {
-  content: "";
-  position: absolute;
-  top: -50%; left: -50%;
-  width: 200%; height: 200%;
-  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
-  transform: rotate(45deg);
-  animation: shine 3s infinite;
-}
-@keyframes shine {
-  0% { transform: translateX(-100%) rotate(45deg); }
-  20% { transform: translateX(100%) rotate(45deg); }
-  100% { transform: translateX(100%) rotate(45deg); }
-}
-@keyframes pulseCyan {
-  0% { box-shadow: 0 0 5px var(--shift-color); }
-  50% { box-shadow: 0 0 20px var(--shift-color); }
-  100% { box-shadow: 0 0 5px var(--shift-color); }
+@keyframes shiftGlow {
+  0%, 100% { box-shadow: 0 0 10px var(--color-accent); }
+  50% { box-shadow: 0 0 30px var(--color-accent); }
 }
 
 /* =========================================
    Sidebar
    ========================================= */
 .sidebar {
-  width: 320px;
-  background-color: var(--sidebar-bg);
-  border-left: 1px solid var(--border-color);
+  width: 350px;
+  background: var(--bg-sidebar);
+  border-left: 1px solid #222;
   display: flex;
   flex-direction: column;
-  transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 10;
-  flex-shrink: 0;
-  box-shadow: -5px 0 15px rgba(0,0,0,0.3);
-}
-.app-wrapper.closed .sidebar { margin-right: -320px; }
-
-.sidebar-header { 
-  display: flex; 
-  height: 45px; 
-  background: #181818; 
-  border-bottom: 1px solid var(--border-color); 
-}
-.tab-container { flex: 1; display: flex; }
-.tab-btn { 
-  flex: 1; 
-  background: transparent; 
-  border: none; 
-  border-bottom: 2px solid transparent; 
-  color: var(--text-sub); 
-  font-weight: bold; 
-  font-size: 0.9rem; 
-  cursor: pointer;
-  transition: 0.2s;
-}
-.tab-btn:hover { color: #ccc; background: rgba(255,255,255,0.02); }
-.tab-btn.active { 
-  color: var(--accent-color); 
-  border-bottom-color: var(--accent-color); 
-  background: rgba(0, 230, 118, 0.05);
-}
-.close-btn { 
-  width: 45px; 
-  background: transparent; 
-  border: none; 
-  color: #666; 
-  border-left: 1px solid #222; 
-  cursor: pointer;
-  font-size: 1.2rem;
-}
-.close-btn:hover { color: #fff; background: #222; }
-
-.sidebar-body { padding: 20px; flex: 1; overflow-y: auto; }
-.sidebar-content { display: none; }
-.sidebar-content.active { display: block; animation: fadeIn 0.3s; }
-@keyframes fadeIn { 
-  from { opacity: 0; transform: translateY(5px); } 
-  to { opacity: 1; transform: translateY(0); } 
-}
-
-.sidebar h3 { 
-  margin-top: 0; 
-  font-size: 0.8rem; 
-  color: var(--text-sub); 
-  border-bottom: 1px solid #333; 
-  padding-bottom: 5px; 
-  margin-bottom: 15px; 
-  letter-spacing: 1px;
-}
-
-/* 統計行 */
-.stat-row { 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center;
-  margin-bottom: 10px; 
-  padding: 8px 12px; 
-  background: rgba(255,255,255,0.03); 
-  border-radius: 4px; 
-  border: 1px solid transparent;
-}
-.stat-row:hover { border-color: #444; }
-.stat-label { color: #888; font-size: 0.8rem; }
-.stat-val { color: #fff; font-weight: bold; font-size: 0.9rem; font-family: var(--font-mono); }
-
-/* 設定ボタンなど */
-.ui-btn { 
-  width: 100%; 
-  padding: 10px; 
-  border: none; 
-  border-radius: 4px; 
-  font-weight: bold; 
-  margin-bottom: 10px; 
-  cursor: pointer;
-  transition: 0.2s;
-}
-.ui-btn.primary { 
-  background: #333; 
-  color: #fff; 
-  border: 1px solid #555; 
-}
-.ui-btn.primary:hover { background: #444; border-color: #777; }
-
-.ui-btn.secondary { 
-  background: #222; 
-  color: #ccc; 
-  border: 1px solid #444; 
-}
-.ui-btn.secondary:hover { background: #333; color: #fff; border-color: #666; }
-
-.ui-btn.danger { 
-  background: rgba(255, 68, 68, 0.1); 
-  color: #ff5252; 
-  border: 1px solid #d32f2f; 
-}
-.ui-btn.danger:hover { 
-  background: #d32f2f; 
-  color: white; 
-}
-
-.select-wrapper select { 
-  width: 100%; 
-  padding: 8px; 
-  background: #222; 
-  color: #fff; 
-  border: 1px solid #444; 
-  border-radius: 4px; 
-  cursor: pointer;
-}
-
-.danger-zone { 
-  margin-top: 30px; 
-  border: 1px solid #d32f2f; 
-  padding: 15px; 
-  background: rgba(255,68,68,0.02); 
-  border-radius: 4px;
-}
-.danger-zone h4 { color: #ff5252; margin-top: 0; }
-
-.status-text { text-align: center; font-size: 0.75rem; color: #555; margin-top: -5px; margin-bottom: 15px; }
-.sidebar-footer { text-align: center; padding: 10px; color: #444; font-size: 0.7rem; border-top: 1px solid #222; }
-
-/* フロートメニューボタン（サイドバーが閉じている時用） */
-.float-menu-btn {
-  position: absolute; 
-  top: 20px; 
-  right: 20px;
-  background: rgba(0,0,0,0.8); 
-  color: #fff; 
-  border: 1px solid #444;
-  padding: 8px 15px; 
-  border-radius: 20px; 
-  font-weight: bold; 
   z-index: 100;
-  display: none;
-  cursor: pointer;
-  backdrop-filter: blur(5px);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: -10px 0 30px rgba(0,0,0,0.8);
 }
-.float-menu-btn:hover { background: #333; border-color: #666; }
-.app-wrapper.closed .float-menu-btn { display: block; }
-
-/* =========================================
-   Effects (Glitch & Crunch)
-   ========================================= */
-
-/* グリッチ・ノイズレイヤー */
-.glitch-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  pointer-events: none; z-index: 999; opacity: 0;
-  mix-blend-mode: exclusion; 
-  background: transparent; 
-  transition: opacity 0.5s;
+.app-wrapper.closed .sidebar {
+  transform: translateX(350px);
+  margin-right: -350px; /* Ensure layout reflow */
 }
 
-/* クランチ前のグリッチ演出 */
-body.glitched .glitch-overlay { 
-  background: rgba(255, 0, 0, 0.05); 
-  animation: noise 0.2s infinite; 
-}
-body.glitched h1, 
-body.glitched h2, 
-body.glitched .generator-row {
-  animation: glitch-skew 0.3s infinite steps(2); 
-  text-shadow: 2px 0 #ff0000, -2px 0 #0000ff;
-}
-
-@keyframes noise {
-  0% { transform: translate(0,0); }
-  10% { transform: translate(-5px,5px); }
-  50% { transform: translate(-5px,5px); }
-  90% { transform: translate(5px,-5px); }
-  100% { transform: translate(0,0); }
-}
-@keyframes glitch-skew {
-  0% { transform: skew(0deg); }
-  20% { transform: skew(-2deg); }
-  40% { transform: skew(2deg); }
-  100% { transform: skew(0deg); }
-}
-
-/* ビッグ・クランチ演出（画面崩壊） */
-.crunch-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: white; 
-  z-index: 10000; 
+.sidebar-header {
+  height: 60px;
+  background: #000;
   display: flex;
-  align-items: center; justify-content: center; flex-direction: column;
-  animation: implode 4s forwards;
+  border-bottom: 1px solid #222;
 }
-.crunch-message { 
-  text-align: center; 
-  color: black; 
-  opacity: 0; 
-  animation: fadeInText 2s 1.5s forwards; 
+
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #555;
+  font-weight: bold;
+  font-family: var(--font-tech);
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: 0.3s;
+  position: relative;
 }
-.crunch-message h1 { 
-  font-size: 3rem; 
-  letter-spacing: 10px; 
-  margin: 0; 
-  color: #000; 
-  font-weight: 900;
+.tab-btn.active {
+  color: #fff;
+  background: rgba(255,255,255,0.02);
+}
+.tab-btn.active::after {
+  content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
+  background: var(--color-main);
+  box-shadow: 0 0 10px var(--color-main);
+}
+
+.close-btn {
+  width: 50px;
+  background: #000;
+  border: none;
+  color: #555;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.close-btn:hover { color: var(--color-danger); }
+
+.sidebar-body {
+  padding: 25px;
+  overflow-y: auto;
+}
+
+.sidebar h3 {
+  color: var(--color-main);
+  font-size: 0.9rem;
+  border-bottom: 1px solid #333;
+  padding-bottom: 5px;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
   text-transform: uppercase;
 }
-.crunch-message p { 
-  color: #333; 
-  font-size: 1.2rem; 
-  margin-top: 20px;
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+.stat-label { color: #777; }
+.stat-val { color: #fff; }
+
+/* Settings Buttons */
+.ui-btn {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #333;
+  background: #151515;
+  color: #ccc;
+  font-family: var(--font-tech);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: 0.2s;
+  border-radius: 2px;
+}
+.ui-btn:hover {
+  background: #222;
+  border-color: #555;
+  color: #fff;
+}
+.ui-btn.primary {
+  border-color: var(--color-main);
+  color: var(--color-main);
+}
+.ui-btn.primary:hover {
+  background: var(--color-main);
+  color: #000;
+}
+.ui-btn.danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+.ui-btn.danger:hover {
+  background: var(--color-danger);
+  color: #fff;
+  box-shadow: 0 0 15px var(--color-danger);
 }
 
-@keyframes implode {
-  0% { background: rgba(255,255,255,0); transform: scale(1); }
-  10% { background: rgba(255,255,255,1); transform: scale(1); }
-  85% { background: rgba(0,0,0,1); transform: scale(1); }
-  100% { background: #000; transform: scale(1); } /* 黒で終わる */
+.danger-zone {
+  margin-top: 40px;
+  padding: 20px;
+  border: 1px dashed #444;
+  background: rgba(255, 46, 99, 0.05);
 }
-@keyframes fadeInText {
-  0% { opacity: 0; transform: scale(2); filter: blur(10px); }
-  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+
+.sidebar-footer {
+  padding: 15px;
+  text-align: center;
+  font-size: 0.7rem;
+  color: #444;
+  border-top: 1px solid #111;
+  background: #050505;
+}
+
+/* =========================================
+   Float Menu Button
+   ========================================= */
+.float-menu-btn {
+  position: absolute;
+  top: 20px; right: 20px;
+  background: rgba(0,0,0,0.8);
+  border: 1px solid var(--color-main);
+  color: var(--color-main);
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-family: var(--font-tech);
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  z-index: 50;
+  display: none;
+  backdrop-filter: blur(5px);
+}
+.app-wrapper.closed .float-menu-btn { display: block; }
+.float-menu-btn:hover {
+  background: var(--color-main);
+  color: #000;
+  box-shadow: 0 0 15px var(--color-main);
+}
+
+/* =========================================
+   Effects (Glitch / Crunch)
+   ========================================= */
+.glitch-overlay {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  pointer-events: none; z-index: 9999;
+  mix-blend-mode: hard-light;
+  opacity: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 255, 157, 0.1) 2px,
+    rgba(0, 255, 157, 0.1) 4px
+  );
+}
+body.glitched .glitch-overlay { opacity: 0.3; animation: flashNoise 0.1s infinite; }
+body.glitched {
+  animation: shake 0.2s infinite;
+}
+
+@keyframes shake {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  20% { transform: translate(-3px, 0px) rotate(1deg); }
+  30% { transform: translate(3px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-3px, 1px) rotate(0deg); }
+  70% { transform: translate(3px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -1px) rotate(1deg); }
+  90% { transform: translate(1px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+/* Big Crunch Overlay */
+.crunch-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: #fff;
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  animation: crunchImplode 4s forwards cubic-bezier(0.6, -0.28, 0.735, 0.045);
+}
+
+.crunch-message h1 {
+  color: #000;
+  font-size: 4rem;
+  font-weight: 900;
+  letter-spacing: 20px;
+  animation: textGlitch 0.3s infinite;
+}
+.crunch-message p {
+  color: #333;
+  font-family: var(--font-mono);
+  letter-spacing: 2px;
+}
+
+@keyframes crunchImplode {
+  0% { background: transparent; backdrop-filter: blur(0px); transform: scale(1); }
+  20% { background: #fff; transform: scale(1.1); }
+  40% { background: #fff; }
+  90% { background: #000; transform: scale(0.001); opacity: 1; }
+  100% { background: #000; transform: scale(0); opacity: 1; }
+}
+
+/* Mobile Response */
+@media (max-width: 768px) {
+  .sidebar { position: absolute; right: 0; height: 100%; }
+  .game-panel { padding: 10px; }
+  .currency-container h2 { font-size: 2.5rem; }
+  .generator-row { padding: 10px; flex-wrap: wrap; }
+  .btn-group { width: 100%; flex-direction: row; margin-top: 10px; }
+  .btn-group button { flex: 1; }
 }
