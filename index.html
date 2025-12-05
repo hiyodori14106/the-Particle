@@ -4,27 +4,34 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>the-Particle</title>
-  <link rel="icon" href="title.png" type="image/x-icon">
   <!-- スタイルシートの読み込み -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- 演出用レイヤー（グリッチ・ノイズ） -->
+
+  <!-- =========================================
+     演出用レイヤー
+     ========================================= -->
+  
+  <!-- 1. グリッチ・ノイズ（ランダムな乱れ用） -->
   <div id="glitch-layer" class="glitch-overlay"></div>
   
-  <!-- 演出用レイヤー（ビッグ・クランチ：画面崩壊） -->
-  <div id="crunch-overlay" class="crunch-overlay" style="display: none;">
+  <!-- 2. ビッグ・クランチ（転生演出用） -->
+  <!-- CSSのアニメーションに合わせてパーツを追加しました -->
+  <div id="crunch-overlay" class="crunch-overlay">
+    <div class="event-horizon"></div> <!-- 事象の地平線（リング） -->
+    <div class="singularity"></div>   <!-- 特異点（光の粒） -->
     <div class="crunch-message">
-    <h1>BIG CRUNCH</h1>
-    <p>REWRITING UNIVERSE DATA...</p>
-  </div>
-</div>
-      <h1>UNIVERSE COLLAPSED</h1>
-      <p>宇宙は粒子の重みに耐えきれませんでした</p>
+      <h1>BIG CRUNCH</h1>
+      <p>REWRITING UNIVERSE DATA...</p>
     </div>
   </div>
 
+  <!-- =========================================
+     メインレイアウト
+     ========================================= -->
   <div class="app-wrapper" id="app-wrapper">
+    
     <!-- メインゲーム画面 -->
     <main class="game-panel">
       <header>
@@ -40,7 +47,7 @@
         </div>
       </header>
 
-      <!-- シフト情報バー (シフト実行後に表示) -->
+      <!-- シフト情報バー -->
       <div id="shift-status" class="shift-bar" style="display: none;">
         現在のライナック倍率: <span id="shift-mult-display" style="color:#00e676; font-weight:bold;">x1.2</span>
         <span style="font-size:0.8em; color:#888; margin-left:10px;">(シフト回数: <span id="shift-count">0</span>)</span>
@@ -67,7 +74,7 @@
         </div>
       </div>
 
-      <!-- コントロールバー (購入数切替) -->
+      <!-- コントロールバー -->
       <div class="control-bar">
         <span class="control-label">購入数:</span>
         <div class="toggle-group">
@@ -119,7 +126,7 @@
           
           <!-- Infinity到達後の統計 -->
           <div id="infinity-stats" style="display:none; margin-top: 20px; border-top: 1px dashed #555; padding-top:10px;">
-            <h3 style="color:#b388ff;">COSMIC STATS</h3>
+            <h3 style="color:#d500f9;">COSMIC STATS</h3>
             <div class="stat-row">
               <span class="stat-label">Big Crunch 回数</span>
               <span id="stat-crunch" class="stat-val">0 回</span>
@@ -134,35 +141,29 @@
         <!-- 設定タブ -->
         <div id="tab-settings" class="sidebar-content">
           <h3>DISPLAY</h3>
-          <div class="setting-group">
-            <label class="setting-label" style="font-size:0.8rem; color:#888;">数値表記</label>
-            <div class="select-wrapper">
-              <select id="notation-select" onchange="changeNotation(this.value)">
-                <option value="sci">科学的単位 (1e10)</option>
-                <option value="eng">英語単位 (10 B)</option>
-                <option value="jp">日本語単位 (100億)</option>
-              </select>
-            </div>
+          <div class="select-wrapper">
+            <select id="notation-select" onchange="changeNotation(this.value)">
+              <option value="sci">科学的単位 (1e10)</option>
+              <option value="eng">英語単位 (10 B)</option>
+              <option value="jp">日本語単位 (100億)</option>
+            </select>
           </div>
 
-          <h3 style="margin-top:20px;">DATA MANAGEMENT</h3>
-          <div class="setting-group">
-            <button class="ui-btn primary" onclick="saveGame()">データをセーブ</button>
-            <div class="status-text" id="save-status">オートセーブ有効 (10秒毎)</div>
-          </div>
-          <div class="setting-group">
-            <button class="ui-btn secondary" onclick="exportSave()">セーブデータを書き出し</button>
-            <button class="ui-btn secondary" onclick="importSave()">セーブデータを読み込み</button>
-          </div>
+          <h3>DATA MANAGEMENT</h3>
+          <button class="ui-btn primary" onclick="saveGame()">データをセーブ</button>
+          <div class="status-text" id="save-status">オートセーブ有効 (10秒毎)</div>
+          
+          <button class="ui-btn" onclick="exportSave()">セーブデータを書き出し</button>
+          <button class="ui-btn" onclick="toggleImportArea()">セーブデータを読み込み</button>
           
           <!-- インポート/エクスポート用エリア -->
           <div id="io-area" style="display:none; margin-top:10px;">
             <p style="font-size:0.8rem; color:#888; margin-bottom:5px;" id="io-label">データ文字列:</p>
-            <textarea id="save-textarea" rows="4" style="width:100%; background:#222; color:#fff; border:1px solid #444; font-family:monospace; font-size:0.8rem; padding:5px;"></textarea>
-            <button class="ui-btn primary" id="io-action-btn" style="margin-top:5px;" onclick="confirmImport()">読み込む</button>
+            <textarea id="save-textarea" placeholder="ここにセーブデータを貼り付け..."></textarea>
+            <button class="ui-btn primary" id="io-action-btn" onclick="confirmImport()">読み込む</button>
           </div>
 
-          <div class="setting-group danger-zone">
+          <div class="danger-zone">
             <h4>DANGER ZONE</h4>
             <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">全ての進捗を完全に削除します。</p>
             <button class="ui-btn danger" onclick="hardReset()">COMPLETE WIPE</button>
@@ -180,5 +181,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
-
