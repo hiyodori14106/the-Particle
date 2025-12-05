@@ -1007,6 +1007,182 @@ select:focus { outline: none; background: #222; }
   border-top: 1px solid rgba(255,255,255,0.05);
   background: #020202;
 }
+/* =========================================
+   SIDEBAR FIX (Functional & Visual)
+   ========================================= */
 
+/* サイドバーの基本配置: 画面右側に「固定(fixed)」することでレイアウト崩れを防ぐ */
+.sidebar {
+  position: fixed;        /* フレックスボックスから切り離して固定 */
+  top: 0;
+  right: 0;
+  width: 350px;           /* 幅 */
+  height: 100vh;          /* 画面の高さ一杯 */
+  background: rgba(10, 10, 12, 0.95); /* 背景色（半透明） */
+  border-left: 1px solid var(--color-main);
+  box-shadow: -10px 0 50px rgba(0, 0, 0, 0.8);
+  
+  /* 配置とアニメーション */
+  z-index: 2000;          /* 最前面に表示 (クランチ演出よりは下、ゲームより上) */
+  transform: translateX(0); /* デフォルトで表示（位置 0） */
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(10px); /* すりガラス効果 */
+}
+
+/* 背景のグリッド装飾 */
+.sidebar::before {
+  content: "";
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background-image: linear-gradient(rgba(0, 255, 157, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0, 255, 157, 0.03) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* --- 閉じた状態の挙動 --- */
+/* .app-wrapper に .closed クラスがついたら画面外(右)へ移動 */
+.app-wrapper.closed .sidebar {
+  transform: translateX(100%); /* 右へ100%移動（隠れる） */
+  box-shadow: none;
+}
+
+/* メイン画面の幅調整（PCの場合、サイドバーが開いているときは右に余白を作る） */
+@media (min-width: 769px) {
+  .app-wrapper {
+    transition: margin-right 0.4s ease;
+    margin-right: 350px; /* サイドバーの分だけ空ける */
+  }
+  .app-wrapper.closed {
+    margin-right: 0;     /* 閉じたら元に戻す */
+  }
+}
+
+/* --- サイドバー内部のヘッダー --- */
+.sidebar-header {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  background: rgba(0, 0, 0, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0; /* 縮まないようにする */
+}
+
+/* タブ切り替えボタン */
+.tab-container {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 8px 0;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #888;
+  font-family: var(--font-tech);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s;
+  clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+}
+
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.tab-btn.active {
+  background: rgba(0, 255, 157, 0.15);
+  color: var(--color-main);
+  border-color: var(--color-main);
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
+}
+
+/* 閉じるボタン (×) */
+.close-btn {
+  width: 30px; height: 30px;
+  margin-left: 10px;
+  background: transparent;
+  border: none;
+  color: #666;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.2s;
+}
+.close-btn:hover { color: var(--color-danger); }
+
+
+/* --- サイドバーの中身 (スクロールエリア) --- */
+.sidebar-body {
+  flex: 1;
+  overflow-y: auto; /* 縦スクロール有効化 */
+  padding: 20px;
+}
+
+/* コンテンツの表示制御 (タブ切り替え用) */
+.sidebar-content {
+  display: none; /* 基本非表示 */
+  animation: fadeIn 0.3s ease;
+}
+.sidebar-content.active {
+  display: block; /* activeクラスがついたら表示 */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* --- 「メニュー」ボタン (サイドバーを開くボタン) --- */
+/* 最初は非表示、.closedの時だけ表示 */
+.float-menu-btn {
+  position: fixed;
+  top: 20px; right: 20px;
+  z-index: 1500;
+  
+  padding: 10px 25px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid var(--color-main);
+  color: var(--color-main);
+  font-family: var(--font-tech);
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  
+  opacity: 0;          /* デフォルトは見えない */
+  pointer-events: none; /* 押せない */
+  transform: translateY(-10px);
+  transition: all 0.3s;
+}
+
+/* サイドバーが閉じている(.closed)時だけ、メニューボタンを表示 */
+.app-wrapper.closed .float-menu-btn {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.app-wrapper.closed .float-menu-btn:hover {
+  background: var(--color-main);
+  color: #000;
+  box-shadow: 0 0 15px var(--color-main);
+}
+
+/* --- モバイル対応 --- */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%; /* スマホなら全幅 */
+  }
+  .app-wrapper {
+    margin-right: 0; /* スマホでは横並びにしない */
+  }
+}
 
 
