@@ -654,4 +654,51 @@ function triggerBigCrunch() {
      overlay.classList.remove('active');
   }, 8000);
 }
+/* =========================================
+   TAB SWITCHING FIX (Add to end of CSS)
+   ========================================= */
 
+/* 1. 基本的にタブの中身はすべて隠す */
+.sidebar-content {
+  display: none;
+  opacity: 0;
+}
+
+/* 2. 'active' クラスがついているタブだけを表示する */
+.sidebar-content.active {
+  display: block;
+  opacity: 1;
+  animation: tabSlideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 3. 切り替え時の「フワッ」と出てくるアニメーション */
+@keyframes tabSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px); /* 少し下から */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);    /* 定位置へ */
+  }
+}
+
+/* --- レイアウト崩れ補正（念のため） --- */
+
+/* 統計データの行をきれいに左右に分ける */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 設定項目の間隔を整える */
+.setting-group {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
