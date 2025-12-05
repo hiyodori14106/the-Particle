@@ -1,14 +1,12 @@
 /**
- * the-Particle v2.6 (Big Crunch Visual Update)
+ * the-Particle v2.7 (Tab Switching Fix)
  * 
- * 変更点:
- * - ビッグクランチ演出をCSSアニメーションと同期
- * - HTMLとの連携ミス（toggleImportArea等）を修正
- * - コードの最適化・整理
+ * 修正点:
+ * - switchTab関数を強化し、style.displayを直接操作してタブの重なりを強制排除
+ * - init関数で起動時に「統計」タブを強制的に開く処理を追加
  */
 
-const SAVE_KEY = 'theParticle_v2_6';
-// Infinity発生ライン（倍精度浮動小数点の限界付近）
+const SAVE_KEY = 'theParticle_v2_7';
 const INFINITY_LIMIT = 1.79e308; 
 
 // 単位定義
@@ -28,7 +26,6 @@ function getInitialState() {
       startTime: Date.now(),
     },
     
-    // Infinity関連（リセット後も保持されるデータ）
     infinity: {
       ip: 0,
       crunchCount: 0,
@@ -43,7 +40,6 @@ function getInitialState() {
     lastTick: Date.now(),
     autobuyerTimer: 0,
 
-    // ジェネレーター初期設定
     generators: [
       { id: 0, name: "Accelerator Mk.1", baseCost: 10,   costMult: 1.5, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: true },
       { id: 1, name: "Accelerator Mk.2", baseCost: 100,  costMult: 1.8, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: true },
@@ -58,7 +54,7 @@ function getInitialState() {
 }
 
 let game = getInitialState();
-let isCrunching = false; // アニメーション中の操作ブロック用フラグ
+let isCrunching = false;
 
 // --- ユーティリティ ---
 function format(num) {
@@ -113,27 +109,22 @@ function getCost(gen) {
   return gen.baseCost * Math.pow(gen.costMult, gen.bought);
 }
 
-// ライナック(Prestige)によるベース倍率計算
 function getLinacBaseMult() {
   const s = game.shifts || 0;
-  // 初期1.2倍 + シフト回数 * 0.2
   return 1.2 + (s * 0.2);
 }
 
-// 全体生産倍率
 function getGlobalMultiplier() {
   const base = getLinacBaseMult();
   const l = game.linacs || 0;
   return Math.pow(base, l);
 }
 
-// 次のライナックに必要なMk.8の数
 function getLinacReq() {
   const l = game.linacs || 0;
   return 1 + (l * 10);
 }
 
-// 次のシフトに必要なライナック回数
 function getShiftReq() {
   const s = game.shifts || 0;
   return 5 + (s * 5);
@@ -141,7 +132,7 @@ function getShiftReq() {
 
 // --- ゲームループ ---
 function gameLoop() {
-  if (isCrunching) return; // クランチ演出中は処理停止
+  if (isCrunching) return;
 
   const now = Date.now();
   let dt = (now - game.lastTick) / 1000;
@@ -150,7 +141,6 @@ function gameLoop() {
 
   if (isNaN(game.particles)) game.particles = 10;
   
-  // 無限到達チェック
   if (game.particles >= INFINITY_LIMIT) {
     triggerBigCrunch();
     return;
@@ -160,7 +150,6 @@ function gameLoop() {
 
   const globalMult = getGlobalMultiplier();
 
-  // 生産処理 (Mk.1)
   const g0 = game.generators[0];
   const pps = g0.amount * g0.production * globalMult;
   const produced = pps * dt;
@@ -170,7 +159,6 @@ function gameLoop() {
     game.stats.totalParticles += produced;
   }
 
-  // カスケード生産 (Mk.2 -> Mk.1, Mk.3 -> Mk.2 ...)
   for (let i = 1; i < game.generators.length; i++) {
     const producer = game.generators[i];
     const target = game.generators[i - 1];
@@ -180,7 +168,6 @@ function gameLoop() {
     }
   }
 
-  // オートバイヤー処理
   game.autobuyerTimer = (game.autobuyerTimer || 0) + dt;
   if (game.autobuyerTimer >= 0.5) {
     runAutobuyers();
@@ -189,13 +176,11 @@ function gameLoop() {
 
   updateUI(pps);
   
-  // サイドバーが開いている時だけ統計更新
   const wrapper = document.getElementById('app-wrapper');
   if (wrapper && !wrapper.classList.contains('closed')) {
     updateStats();
   }
   
-  // オートセーブ (約10秒ごと)
   if (now % 10000 < 20) saveGame(true);
   
   requestAnimationFrame(gameLoop);
@@ -205,13 +190,10 @@ function gameLoop() {
 function runAutobuyers() {
   game.generators.forEach((gen, index) => {
     const threshold = Number('1e' + (50 + index * 10));
-    // 条件達成で自動アンロック
     if (!gen.autoUnlocked && game.particles >= threshold) {
       gen.autoUnlocked = true;
     }
-    // 購入処理
     if (gen.autoUnlocked && gen.autoActive) {
-      // パフォーマンスのため1フレーム最大10個まで
       for(let k=0; k<10; k++) {
         const cost = getCost(gen);
         if (game.particles >= cost) {
@@ -263,7 +245,6 @@ function buyGenerator(index) {
 function buyMaxGenerator(index) {
   const gen = game.generators[index];
   let count = 0;
-  // 無限ループ防止のため最大100回ループ制限
   for(let i=0; i<100; i++){
     const cost = getCost(gen);
     if (game.particles >= cost) {
@@ -279,7 +260,6 @@ function buyMaxGenerator(index) {
   if (count > 0) updateUI(0);
 }
 
-// 通常のリセット（ライナック）
 function doLinac() {
   const req = getLinacReq();
   if (game.generators[7].amount < req) return;
@@ -290,7 +270,6 @@ function doLinac() {
   game.linacs = (game.linacs || 0) + 1;
   game.stats.totalLinacs = (game.stats.totalLinacs || 0) + 1;
   
-  // リセット処理 (粒子とジェネレーターのみ)
   game.particles = 10;
   game.generators.forEach(gen => {
     gen.amount = 0;
@@ -302,7 +281,6 @@ function doLinac() {
   updateUI(0);
 }
 
-// 上位リセット（シフト）
 function doLinacShift() {
   const shiftReq = getShiftReq();
   if ((game.linacs || 0) < shiftReq) return;
@@ -314,7 +292,6 @@ function doLinacShift() {
 
   game.shifts = (game.shifts || 0) + 1;
   
-  // シフト時はライナック数も0に戻る
   game.linacs = 0;
   game.particles = 10;
   
@@ -337,7 +314,6 @@ function updateUI(pps) {
   const ppsDisplay = document.getElementById('pps-display');
   if(ppsDisplay) ppsDisplay.textContent = `(+${format(pps)} /秒)`;
 
-  // Infinity Point 表示
   const ipContainer = document.getElementById('ip-display-container');
   if (ipContainer) {
     if (game.infinity && game.infinity.ip > 0) {
@@ -348,7 +324,6 @@ function updateUI(pps) {
     }
   }
 
-  // シフト情報バー
   const shiftStatusBar = document.getElementById('shift-status');
   if (shiftStatusBar) {
     if ((game.shifts || 0) > 0) {
@@ -361,14 +336,12 @@ function updateUI(pps) {
     }
   }
 
-  // プレステージ/シフトバナー制御
   const linacReq = getLinacReq();
   const shiftReq = getShiftReq();
   const pContainer = document.getElementById('prestige-container');
   const baseMult = getLinacBaseMult();
 
   if (pContainer) {
-    // Mk.8が条件を満たすか、既にシフト条件を満たしていれば表示
     if (game.generators[7].amount >= linacReq || game.linacs >= shiftReq) {
       pContainer.style.display = 'block';
       
@@ -378,7 +351,6 @@ function updateUI(pps) {
       const nextShiftEl = document.getElementById('next-shift-req');
       if(nextShiftEl) nextShiftEl.textContent = shiftReq;
 
-      // ライナックボタン
       const btnLinac = document.getElementById('btn-linac');
       if (btnLinac) {
         if (game.generators[7].amount >= linacReq) {
@@ -392,7 +364,6 @@ function updateUI(pps) {
         }
       }
 
-      // シフトボタン
       const btnShift = document.getElementById('btn-shift');
       if (btnShift) {
         if (game.linacs >= shiftReq) {
@@ -409,7 +380,6 @@ function updateUI(pps) {
     }
   }
 
-  // ジェネレーター一覧更新
   game.generators.forEach((gen, index) => {
     const btn = document.getElementById(`btn-${index}`);
     const btnMax = document.getElementById(`btn-max-${index}`);
@@ -418,12 +388,11 @@ function updateUI(pps) {
     const buyAmt = game.settings.buyAmount;
     const cost = getBulkCost(gen, buyAmt);
     
-    // オートバイヤーバッジ更新
     const autoBadge = document.getElementById(`auto-badge-${index}`);
     const threshold = Number('1e' + (50 + index * 10));
     
     if (autoBadge) {
-      autoBadge.className = 'auto-badge'; // リセット
+      autoBadge.className = 'auto-badge'; 
       autoBadge.onclick = null;
       if (gen.autoUnlocked) {
         autoBadge.classList.add('clickable');
@@ -484,7 +453,6 @@ function updateGlitchEffect() {
   const overlay = document.getElementById('glitch-layer');
   if (!overlay) return;
   
-  // 1e250からグリッチ開始
   if (game.particles < 1e250) {
     document.body.classList.remove('glitched');
     overlay.style.opacity = 0;
@@ -498,16 +466,14 @@ function updateGlitchEffect() {
   }
 }
 
-// --- ビッグ・クランチ（演出連携版） ---
+// --- ビッグ・クランチ ---
 function triggerBigCrunch() {
-  if (isCrunching) return; // 重複実行防止
+  if (isCrunching) return;
 
   const currentTime = Date.now() - game.stats.startTime;
   
-  // Infinityオブジェクト初期化
   if (!game.infinity) game.infinity = { ip:0, crunchCount:0, bestTime:null };
   
-  // データ更新
   game.infinity.ip = (game.infinity.ip || 0) + 1;
   game.infinity.crunchCount = (game.infinity.crunchCount || 0) + 1;
   
@@ -515,65 +481,52 @@ function triggerBigCrunch() {
     game.infinity.bestTime = currentTime;
   }
   
-  // 操作ブロック開始
   isCrunching = true;
-  saveGame(); // クラッシュ対策でセーブ
+  saveGame();
 
   const overlay = document.getElementById('crunch-overlay');
   if(overlay) {
-    // CSSアニメーション開始 (.active付与)
     overlay.classList.add('active');
   }
   
-  // 5秒後：画面が真っ白になったタイミングでデータリセット
   setTimeout(() => {
     performInfinityReset();
   }, 5000);
 
-  // 8.5秒後：アニメーション終了後に復帰
   setTimeout(() => {
     if(overlay) overlay.classList.remove('active');
-    isCrunching = false; // 操作ブロック解除
+    isCrunching = false;
   }, 8500);
 }
 
 function performInfinityReset() {
-  // 1. 重要なデータを退避
   const savedInfinity = JSON.parse(JSON.stringify(game.infinity));
   const savedSettings = JSON.parse(JSON.stringify(game.settings));
   
-  // 2. 完全な初期状態を取得
   const freshState = getInitialState();
   
-  // 3. データを上書きリセット
   game.particles = freshState.particles;
   game.linacs = freshState.linacs;
   game.shifts = freshState.shifts;
   game.generators = freshState.generators;
   game.stats = freshState.stats;
-  game.stats.startTime = Date.now(); // 開始時間更新
+  game.stats.startTime = Date.now();
 
-  // 4. 退避データを戻す
   game.infinity = savedInfinity;
   game.settings = savedSettings;
   
-  // 5. 時間計測リセット
   game.lastTick = Date.now();
   
-  // 6. UIの強制更新
   updateUI(0);
   updateStats();
   document.body.classList.remove('glitched');
   
-  // 7. 新しい状態でセーブ
   saveGame();
-  
   console.log("Universe Reborn.");
 }
 
-// --- セーブ・ロード・インポート ---
+// --- セーブ・ロード ---
 function saveGame(isAuto = false) {
-  // 演出中はオートセーブをスキップ
   if(isCrunching && isAuto) return;
   
   game.lastTick = Date.now();
@@ -595,7 +548,6 @@ function loadGame() {
       const parsed = JSON.parse(data);
       const fresh = getInitialState();
       
-      // マージ処理
       game = { ...fresh, ...parsed };
       game.stats = { ...fresh.stats, ...(parsed.stats || {}) };
       game.infinity = { ...fresh.infinity, ...(parsed.infinity || {}) };
@@ -613,7 +565,6 @@ function loadGame() {
         });
       }
       
-      // UIへ反映
       const notSel = document.getElementById('notation-select');
       if(notSel) notSel.value = game.settings.notation;
       setBuyAmount(game.settings.buyAmount);
@@ -635,7 +586,7 @@ function exportSave() {
   saveGame(true);
   const str = btoa(JSON.stringify(game));
   const area = document.getElementById('save-textarea');
-  toggleImportArea(true); // エリアを表示
+  toggleImportArea(true); 
   area.value = str;
   area.select();
 }
@@ -655,7 +606,7 @@ function confirmImport() {
   if (!str) return;
   try {
     const decoded = atob(str);
-    JSON.parse(decoded); // 検証
+    JSON.parse(decoded); 
     localStorage.setItem(SAVE_KEY, decoded);
     location.reload();
   } catch(e) { 
@@ -663,18 +614,41 @@ function confirmImport() {
   }
 }
 
+// --- タブ切り替え（強制表示切り替え版） ---
 function toggleSidebar() { 
   const el = document.getElementById('app-wrapper');
   if(el) el.classList.toggle('closed');
 }
 
 function switchTab(name, btn) {
-  document.querySelectorAll('.sidebar-content').forEach(c => c.classList.remove('active'));
-  const tab = document.getElementById(`tab-${name}`);
-  if(tab) tab.classList.add('active');
+  // 1. すべてのコンテンツを強制的に隠す (style.display を直接操作)
+  document.querySelectorAll('.sidebar-content').forEach(c => {
+    c.style.display = 'none';
+    c.classList.remove('active');
+  });
   
+  // 2. 選択されたタブだけを表示
+  const targetId = 'tab-' + name;
+  const targetContent = document.getElementById(targetId);
+  if (targetContent) {
+    targetContent.style.display = 'block';
+    targetContent.classList.add('active');
+  }
+  
+  // 3. ボタンの見た目更新
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if(btn) {
+    btn.classList.add('active');
+  } else {
+    // ボタンが渡されなかった場合（初期化時など）、IDから推測してactiveにする
+    // 注意: 'onclick' 属性の文字列部分一致でボタンを探す
+    const btns = document.querySelectorAll('.tab-btn');
+    btns.forEach(b => {
+        if(b.getAttribute('onclick') && b.getAttribute('onclick').includes(name)) {
+            b.classList.add('active');
+        }
+    });
+  }
 }
 
 // --- 初期化 ---
@@ -708,8 +682,11 @@ function init() {
   }
 
   loadGame();
+  
+  // ★重要: 初期化時に「統計」タブを強制的に開く
+  switchTab('stats');
+
   gameLoop();
 }
 
-// ゲーム開始
 init();
