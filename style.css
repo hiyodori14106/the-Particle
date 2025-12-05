@@ -1184,5 +1184,132 @@ select:focus { outline: none; background: #222; }
     margin-right: 0; /* スマホでは横並びにしない */
   }
 }
+/* =========================================
+   SIDEBAR CONTENT FIX (中身の整形)
+   ========================================= */
 
+/* サイドバー内の要素すべての基準 */
+.sidebar-body * {
+  box-sizing: border-box;
+}
+
+/* 1. 見出し (H3) のデザイン修正 */
+.sidebar h3 {
+  margin: 25px 0 15px 0; /* 上下に余白を開ける */
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--color-main); /* 下線 */
+  color: var(--color-main);
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+/* 最初の見出しだけ上の余白を消す */
+.sidebar h3:first-child {
+  margin-top: 0;
+}
+
+/* 2. 統計データの行 (Stat Row) を横並びにする */
+/* これがないと「経過時間」と「00:00」がくっつきます */
+.stat-row {
+  display: flex;               /* 横並びにする */
+  justify-content: space-between; /* 左端と右端に配置 */
+  align-items: center;         /* 縦位置を中央揃え */
+  padding: 8px 0;              /* 上下の隙間 */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* 薄い区切り線 */
+}
+
+.stat-label {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.stat-val {
+  color: #fff;
+  font-family: var(--font-mono); /* 等幅フォントで数字を揃える */
+  font-weight: bold;
+  text-align: right;
+}
+
+/* 3. 設定エリアのグループ分け */
+.setting-group {
+  margin-bottom: 20px;       /* グループごとの間隔 */
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.03); /* 少し明るい背景 */
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.setting-label {
+  display: block;            /* ブロック要素にして改行させる */
+  margin-bottom: 8px;
+  color: #aaa;
+  font-size: 0.8rem;
+}
+
+/* 4. セレクトボックス（プルダウン）の整形 */
+.select-wrapper {
+  width: 100%;
+  position: relative;
+}
+
+select {
+  width: 100%;
+  padding: 10px;
+  background: #111;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+}
+
+/* 5. ボタンのデザイン修正 */
+.ui-btn {
+  display: block;            /* ブロック要素にする */
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  background: #222;
+  color: #fff;
+  border: 1px solid #555;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-weight: bold;
+  transition: 0.2s;
+}
+.ui-btn:hover {
+  background: #333;
+  border-color: #888;
+}
+
+.ui-btn.primary {
+  border-color: var(--color-main);
+  color: var(--color-main);
+  background: rgba(0, 255, 157, 0.1);
+}
+.ui-btn.primary:hover {
+  background: var(--color-main);
+  color: #000;
+}
+
+.ui-btn.danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: rgba(255, 46, 99, 0.1);
+}
+.ui-btn.danger:hover {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+/* 6. テキストエリアの整形 */
+#save-textarea {
+  width: 100%;
+  background: #000;
+  border: 1px solid #333;
+  color: var(--color-main);
+  font-family: monospace;
+  margin-bottom: 10px;
+  padding: 5px;
+}
 
