@@ -244,20 +244,30 @@ function buyGenerator(index) {
 
 function buyMaxGenerator(index) {
   const gen = game.generators[index];
-  let count = 0;
-  for(let i=0; i<100; i++){
-    const cost = getCost(gen);
-    if (game.particles >= cost) {
-      game.particles -= cost;
-      gen.amount++;
-      gen.bought++;
-      gen.production *= 1.1;
-      count++;
-    } else {
-      break;
-    }
+  const r = gen.costMult; 
+  
+  // 現在の価格
+  const currentCost = gen.baseCost * Math.pow(r, gen.bought);
+  
+  if (game.particles < currentCost) return;
+
+  // 最大購入可能数を対数計算で一発算出
+  // k = floor( log_r ( particles * (r-1) / currentCost + 1 ) )
+  const numerator = (game.particles * (r - 1)) / currentCost + 1;
+  let count = Math.floor(Math.log(numerator) / Math.log(r));
+
+  if (count <= 0) return;
+
+  // 総コスト計算: Sum = currentCost * (r^count - 1) / (r - 1)
+  const totalCost = currentCost * (Math.pow(r, count) - 1) / (r - 1);
+
+  if (game.particles >= totalCost) {
+    game.particles -= totalCost;
+    gen.amount += count;
+    gen.bought += count;
+    gen.production *= Math.pow(1.1, count);
+    updateUI(0);
   }
-  if (count > 0) updateUI(0);
 }
 
 function doLinac() {
