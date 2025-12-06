@@ -623,15 +623,18 @@ function confirmImport() {
     alert("データが無効です"); 
   }
 }
+// =========================================
+// ▼ confirmImport の後ろに貼り付けるコード ▼
+// =========================================
 
-// --- タブ切り替え（強制表示切り替え版） ---
+// --- UI操作 (メニューの開閉・タブ切り替え) ---
 function toggleSidebar() { 
   const el = document.getElementById('app-wrapper');
   if(el) el.classList.toggle('closed');
 }
 
 function switchTab(name, btn) {
-  // 1. すべてのコンテンツを強制的に隠す (style.display を直接操作)
+  // 1. すべてのコンテンツを隠す
   document.querySelectorAll('.sidebar-content').forEach(c => {
     c.style.display = 'none';
     c.classList.remove('active');
@@ -650,8 +653,7 @@ function switchTab(name, btn) {
   if(btn) {
     btn.classList.add('active');
   } else {
-    // ボタンが渡されなかった場合（初期化時など）、IDから推測してactiveにする
-    // 注意: 'onclick' 属性の文字列部分一致でボタンを探す
+    // 初期化時などボタン要素が直接渡されない場合の処理
     const btns = document.querySelectorAll('.tab-btn');
     btns.forEach(b => {
         if(b.getAttribute('onclick') && b.getAttribute('onclick').includes(name)) {
@@ -661,42 +663,9 @@ function switchTab(name, btn) {
   }
 }
 
-// --- 初期化 ---
-function init() {
-  const container = document.getElementById('generator-container');
-  if(container) {
-    container.innerHTML = '';
-    getInitialState().generators.forEach((gen, index) => {
-      const row = document.createElement('div');
-      row.className = 'generator-row';
-      row.innerHTML = `
-        <div class="gen-info">
-          <div class="gen-name">
-            ${gen.name} 
-            <span id="auto-badge-${index}" class="auto-badge">Req: 1e${50 + index*10}</span>
-          </div>
-          <div class="gen-amount" id="amount-${index}">0</div>
-          <div class="gen-multiplier" id="mult-${index}">x1.00</div>
-        </div>
-        <div class="btn-group">
-          <button id="btn-${index}" class="buy-btn" onclick="buyGenerator(${index})">
-            1個購入
-          </button>
-          <button id="btn-max-${index}" class="buy-btn max" onclick="buyMaxGenerator(${index})">
-            Buy Max
-          </button>
-        </div>
-      `;
-      container.appendChild(row);
-    });
-  }
-// =========================================
-//  ▼ ここから下を script.js の一番下に貼り付けてください ▼
-// =========================================
-
 // --- ショートカットキー機能 ---
 document.addEventListener('keydown', (e) => {
-  // 入力エリアでは反応しないようにする
+  // 入力エリアでは反応しない
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
 
   const key = e.key.toLowerCase();
@@ -711,17 +680,17 @@ document.addEventListener('keydown', (e) => {
   // Mキー: 最大購入
   if (key === 'm') {
     game.generators.forEach((_, i) => buyMaxGenerator(i));
-    for(let i=0; i<8; i++) animateButton(i); // 全ボタン演出
+    for(let i=0; i<8; i++) animateButton(i);
   }
 
   // Sキー: セーブ
   if (key === 's') {
     e.preventDefault();
     saveGame();
-    // ボタン演出の代わりにセーブ表示を強調
+    // セーブ完了演出
     const s = document.getElementById('save-status');
     if(s) {
-        s.textContent = "★ クイックセーブ完了 ★";
+        s.textContent = "★ QUICK SAVE! ★";
         s.style.color = "#00ff9d";
         setTimeout(() => { 
             s.textContent = "オートセーブ有効 (10秒毎)"; 
@@ -731,11 +700,11 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ボタンを押した時のピカッとする演出
+// ボタンを押した時の演出
 function animateButton(index) {
   const btn = document.getElementById(`btn-${index}`);
   if (btn) {
-    btn.classList.add('btn-pressed'); // style.cssのクラスを適用
+    btn.classList.add('btn-pressed');
     setTimeout(() => btn.classList.remove('btn-pressed'), 150);
   }
 }
@@ -745,7 +714,7 @@ const NEWS_DATA = [
   { req: 0, text: "システム起動... 観測を開始します。" },
   { req: 0, text: "近所の猫が粒子まみれになっています。" },
   { req: 0, text: "電気代の請求書が怖くてポストを開けられません。" },
-  { req: 0, text: "「キーボードのMキー」で一括購入できるらしいです。" },
+  { req: 0, text: "【TIPS】キーボードの 'M' で最大購入、'S' でセーブ可能です。" },
   { req: 100, text: "微細な振動が床から伝わってきます。" },
   { req: 1000, text: "「ただの光る点だ」と友人に笑われました。" },
   { req: 1e4, text: "部屋の照明が不要になりました。" },
@@ -762,11 +731,9 @@ function updateNewsText() {
   const content = document.getElementById('news-content');
   if (!content) return;
 
-  // 現在の粒子数で解放されているニュースを抽出
   const availableNews = NEWS_DATA.filter(n => game.particles >= n.req);
   if (availableNews.length === 0) return;
 
-  // ランダムに1つ選ぶ
   const randIndex = Math.floor(Math.random() * availableNews.length);
   content.textContent = availableNews[randIndex].text;
 }
@@ -774,20 +741,17 @@ function updateNewsText() {
 function initNews() {
   const track = document.querySelector('.news-track');
   if (track) {
-    console.log("News Ticker Started."); // 動作確認用ログ
     updateNewsText();
-    // アニメーションが1周するたびに内容を更新
+    // アニメーションが1周するたびにテキスト更新
     track.addEventListener('animationiteration', updateNewsText);
-  } else {
-    console.error("News Ticker Element Not Found!");
   }
 }
 
-// --- 初期化 (ここがプログラムのスタート地点) ---
+// --- 初期化 (プログラムの開始地点) ---
 function init() {
   console.log("Game Initializing...");
 
-  // HTMLの生成
+  // 1. ジェネレーターリストのHTML生成
   const container = document.getElementById('generator-container');
   if(container) {
     container.innerHTML = '';
@@ -816,16 +780,16 @@ function init() {
     });
   }
 
-  // データのロード
+  // 2. セーブデータのロード
   loadGame();
   
-  // ★ニュース機能の起動
+  // 3. ニュース機能の起動
   initNews();
 
-  // ★統計タブを強制的に開く
+  // 4. 統計タブを初期表示
   switchTab('stats');
 
-  // ゲームループ開始
+  // 5. ゲームループ開始
   gameLoop();
 }
 
