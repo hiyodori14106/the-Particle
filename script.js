@@ -1,8 +1,8 @@
 /**
- * the-Particle v2.8 (Infinity Upgrades)
+ * the-Particle v2.8.1 (Fix: Big Crunch Freeze)
  */
 const SAVE_KEY = 'theParticle_v2_8';
-let INFINITY_LIMIT = 1.79e308; // 変数に変更(Break Infinity用)
+let INFINITY_LIMIT = 1.79e308;
 
 // --- 単位定義 ---
 const UNITS_ENG = [
@@ -28,10 +28,9 @@ const INF_UPGRADES = [
     desc: "総プレイ時間に応じて生産倍率増加",
     cost: 1,
     effect: (game) => {
-      // 秒数を取得
-      const totalSec = (Date.now() - game.stats.startTime) / 1000;
-      // log10(秒数 + 10) をベースにする
-      const mult = Math.max(1, 1 + Math.log10(totalSec + 1) * 0.5);
+      // 秒数を取得 (安全策として0除算等を防ぐ)
+      const totalSec = (Date.now() - (game.stats.startTime || Date.now())) / 1000;
+      const mult = Math.max(1, 1 + Math.log10(totalSec + 10) * 0.5);
       return mult;
     },
     formatEffect: (val) => `x${format(val)}`
@@ -42,7 +41,7 @@ const INF_UPGRADES = [
     desc: "ライナック回数に応じてIP獲得量増加",
     cost: 3,
     effect: (game) => {
-      return 1 + (game.stats.totalLinacs * 0.1);
+      return 1 + ((game.stats.totalLinacs || 0) * 0.1);
     },
     formatEffect: (val) => `x${format(val)} IP`
   },
@@ -52,11 +51,10 @@ const INF_UPGRADES = [
     desc: "シフト回数に応じて生産倍率増加",
     cost: 5,
     effect: (game) => {
-      return Math.pow(2, game.shifts);
+      return Math.pow(2, (game.shifts || 0));
     },
     formatEffect: (val) => `x${format(val)}`
   }
-  // 追加可能
 ];
 
 // --- データ初期値 ---
@@ -74,8 +72,8 @@ function getInitialState() {
       ip: 0,
       crunchCount: 0,
       bestTime: null,
-      upgrades: [], // 購入済みIDリスト
-      broken: false // Break Infinityフラグ
+      upgrades: [],
+      broken: false
     },
     settings: {
       notation: 'sci',
@@ -105,7 +103,7 @@ function format(num) {
   if (!isFinite(num)) return "Infinity";
   if (num < 1000) return num.toFixed(2);
   
-  const type = game.settings ? game.settings.notation : 'sci';
+  const type = (game.settings && game.settings.notation) ? game.settings.notation : 'sci';
   
   if (type === 'sci') return formatScientific(num);
   if (type === 'eng') {
@@ -170,12 +168,9 @@ function getGlobalMultiplier() {
   mult *= Math.pow(base, l);
 
   // Infinity Upgrades
-  if (hasUpgrade(0)) {
-    mult *= INF_UPGRADES[0].effect(game);
-  }
-  if (hasUpgrade(2)) {
-    mult *= INF_UPGRADES[2].effect(game);
-  }
+  // 安全のためtry-catch、あるいは存在確認を行う
+  if (hasUpgrade(0)) mult *= INF_UPGRADES[0].effect(game);
+  if (hasUpgrade(2)) mult *= INF_UPGRADES[2].effect(game);
 
   return mult;
 }
@@ -192,7 +187,11 @@ function getShiftReq() {
 
 // --- ゲームループ ---
 function gameLoop() {
-  if (isCrunching) return;
+  // ★重要修正: requestAnimationFrame を関数の先頭（または return の前）に移動
+  // これにより、isCrunching が true の間もループ（画面更新予約）が継続されます
+  requestAnimationFrame(gameLoop);
+
+  if (isCrunching) return; // 演出中は計算とUI更新をスキップ
 
   const now = Date.now();
   let dt = (now - game.lastTick) / 1000;
@@ -202,13 +201,14 @@ function gameLoop() {
   if (isNaN(game.particles)) game.particles = 10;
   
   // Break Infinity チェック
-  if (game.infinity.broken) {
+  if (game.infinity && game.infinity.broken) {
     INFINITY_LIMIT = 1e999; // 実質無限
   } else {
     INFINITY_LIMIT = 1.79e308;
   }
 
-  if (game.particles >= INFINITY_LIMIT && !game.infinity.broken) {
+  // クランチ発動判定
+  if (game.particles >= INFINITY_LIMIT && !(game.infinity && game.infinity.broken)) {
     triggerBigCrunch();
     return;
   }
@@ -246,12 +246,10 @@ function gameLoop() {
   const wrapper = document.getElementById('app-wrapper');
   if (wrapper && !wrapper.classList.contains('closed')) {
     updateStats();
-    updateInfinityTab(); // Infinityタブの更新
+    updateInfinityTab();
   }
   
   if (now % 10000 < 20) saveGame(true);
-  
-  requestAnimationFrame(gameLoop);
 }
 
 // --- アクション ---
@@ -386,7 +384,7 @@ function buyInfinityUpgrade(id) {
     game.infinity.ip -= upgrade.cost;
     game.infinity.upgrades.push(id);
     updateInfinityTab();
-    updateUI(0); // IP表示更新のため
+    updateUI(0);
   }
 }
 
@@ -406,16 +404,17 @@ function updateUI(pps) {
   const ppsDisplay = document.getElementById('pps-display');
   if(ppsDisplay) ppsDisplay.textContent = `(+${format(pps)} /秒)`;
 
-  // IP表示
+  // IP表示とタブ制御
   const ipContainer = document.getElementById('ip-display-container');
   const infTabBtn = document.getElementById('tab-btn-infinity');
+  const hasReachedInfinity = game.infinity && (game.infinity.crunchCount > 0 || game.infinity.ip > 0);
 
-  if (game.infinity && game.infinity.crunchCount > 0) {
+  if (hasReachedInfinity) {
     if (ipContainer) {
       ipContainer.style.display = 'inline-block';
-      document.getElementById('ip-val').textContent = format(game.infinity.ip); // フォーマット適用
+      const ipVal = document.getElementById('ip-val');
+      if(ipVal) ipVal.textContent = format(game.infinity.ip);
     }
-    // Infinityタブボタンを表示
     if (infTabBtn) infTabBtn.style.display = 'block';
   } else {
     if (ipContainer) ipContainer.style.display = 'none';
@@ -542,15 +541,14 @@ function updateStats() {
     const infStats = document.getElementById('infinity-stats');
     if(infStats) infStats.style.display = 'block';
     document.getElementById('stat-crunch').textContent = `${game.infinity.crunchCount} 回`;
-    document.getElementById('stat-best-inf').textContent = formatTime(game.infinity.bestTime / 1000);
+    document.getElementById('stat-best-inf').textContent = formatTime((game.infinity.bestTime || 0) / 1000);
   }
 }
 
 function updateInfinityTab() {
-  // IP表示更新
-  document.getElementById('inf-tab-ip-display').textContent = format(game.infinity.ip);
+  const el = document.getElementById('inf-tab-ip-display');
+  if(el) el.textContent = format(game.infinity.ip);
 
-  // アップグレード描画
   const container = document.getElementById('infinity-upgrades-container');
   if (container) {
     container.innerHTML = '';
@@ -560,7 +558,6 @@ function updateInfinityTab() {
       btn.className = `inf-upgrade-btn ${bought ? 'bought' : ''}`;
       if (!bought && game.infinity.ip < up.cost) btn.classList.add('disabled');
       
-      // 現在の効果値を計算
       const currentEffect = up.effect(game);
       
       btn.innerHTML = `
@@ -578,7 +575,6 @@ function updateInfinityTab() {
     });
   }
 
-  // Break Infinity Section
   const breakSec = document.getElementById('break-infinity-section');
   const btnBreak = document.getElementById('btn-break-infinity');
   const msgBreak = document.getElementById('break-active-msg');
@@ -602,13 +598,11 @@ function updateInfinityTab() {
   }
 }
 
-
 function updateGlitchEffect() {
   const overlay = document.getElementById('glitch-layer');
   if (!overlay) return;
   
-  // Break Infinity時は演出を控えるか、あるいはもっと激しくするか。今回は控えめに
-  if (game.infinity.broken && game.particles < 1e250) {
+  if (game.infinity && game.infinity.broken && game.particles < 1e250) {
     document.body.classList.remove('glitched');
     overlay.style.opacity = 0;
     return;
@@ -632,9 +626,13 @@ function triggerBigCrunch() {
   if (isCrunching) return;
 
   const currentTime = Date.now() - game.stats.startTime;
-  if (!game.infinity) game.infinity = { ip:0, crunchCount:0, bestTime:null, upgrades:[], broken:false };
   
-  // IP獲得計算 (基本1 + アップグレード等あれば)
+  // オブジェクトが無い場合の初期化
+  if (!game.infinity) {
+    game.infinity = { ip:0, crunchCount:0, bestTime:null, upgrades:[], broken:false };
+  }
+  
+  // IP獲得
   let gainedIP = 1;
   if (hasUpgrade(1)) gainedIP *= INF_UPGRADES[1].effect(game);
   
@@ -646,7 +644,7 @@ function triggerBigCrunch() {
   }
   
   isCrunching = true;
-  saveGame();
+  saveGame(); // この時点のHigh Particleデータを保存
 
   const overlay = document.getElementById('crunch-overlay');
   if(overlay) {
@@ -664,21 +662,23 @@ function triggerBigCrunch() {
 }
 
 function performInfinityReset() {
-  const savedInfinity = JSON.parse(JSON.stringify(game.infinity));
-  const savedSettings = JSON.parse(JSON.stringify(game.settings));
+  // 念のためディープコピー
+  const savedInfinity = JSON.parse(JSON.stringify(game.infinity || {}));
+  const savedSettings = JSON.parse(JSON.stringify(game.settings || {}));
   
   const freshState = getInitialState();
   
+  // 状態のリセット
   game.particles = freshState.particles;
   game.linacs = freshState.linacs;
   game.shifts = freshState.shifts;
   game.generators = freshState.generators;
   game.stats = freshState.stats;
-  game.stats.startTime = Date.now(); // Reset time for new run
+  game.stats.startTime = Date.now();
 
+  // 保存データの復元
   game.infinity = savedInfinity;
   game.settings = savedSettings;
-  
   game.lastTick = Date.now();
   
   updateUI(0);
@@ -691,17 +691,21 @@ function performInfinityReset() {
 
 // --- セーブ・ロード ---
 function saveGame(isAuto = false) {
+  // 自動セーブ中にクランチ演出が起きている場合はセーブしない（変な状態の上書き防止）
   if(isCrunching && isAuto) return;
   
   game.lastTick = Date.now();
-  localStorage.setItem(SAVE_KEY, JSON.stringify(game));
-  
-  if (!isAuto) {
-    const s = document.getElementById('save-status');
-    if(s) {
-      s.textContent = "保存しました";
-      setTimeout(() => s.textContent = "オートセーブ有効 (10秒毎)", 2000);
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(game));
+    if (!isAuto) {
+      const s = document.getElementById('save-status');
+      if(s) {
+        s.textContent = "保存しました";
+        setTimeout(() => s.textContent = "オートセーブ有効 (10秒毎)", 2000);
+      }
     }
+  } catch(e) {
+    console.error("Save failed:", e);
   }
 }
 
@@ -717,9 +721,10 @@ function loadGame() {
       game.infinity = { ...fresh.infinity, ...(parsed.infinity || {}) };
       game.settings = { ...fresh.settings, ...(parsed.settings || {}) };
       
-      // 配列やオブジェクトの補完
+      // 未定義プロパティの補完
       if (!game.infinity.upgrades) game.infinity.upgrades = [];
       if (game.infinity.broken === undefined) game.infinity.broken = false;
+      if (game.infinity.ip === undefined) game.infinity.ip = 0;
 
       if (parsed.generators) {
         game.generators = parsed.generators.map((g, i) => {
@@ -739,6 +744,7 @@ function loadGame() {
 
     } catch(e) {
       console.error("Save Load Error:", e);
+      // データ破損時は初期化も検討するが、ここではログのみ
     }
   }
 }
