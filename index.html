@@ -4,13 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>the-Particle</title>
+   <link rel="icon" href="title.png" type="image/x-icon">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- =========================================
-     演出用レイヤー
-     ========================================= -->
+  <!-- 演出用レイヤー -->
   <div id="glitch-layer" class="glitch-overlay"></div>
 
   <div id="crunch-overlay" class="crunch-overlay">
@@ -24,13 +23,13 @@
 
   <!-- =========================================
      メインレイアウト
+     初期状態で .closed を付与してサイドバーを閉じた状態にする
      ========================================= -->
-  <div class="app-wrapper" id="app-wrapper">
+  <div class="app-wrapper closed" id="app-wrapper">
     
    <!-- メインゲーム画面 -->
     <main class="game-panel">
       
-      <!-- ニュースティッカー -->
       <div class="news-ticker-container">
         <div class="news-track">
           <span id="news-content">システム起動... 宇宙の観測を開始します。</span>
@@ -49,13 +48,11 @@
         </div>
       </header>
 
-      <!-- シフト情報バー -->
       <div id="shift-status" class="shift-bar" style="display: none;">
         現在のライナック倍率: <span id="shift-mult-display" style="color:#00e676; font-weight:bold;">x1.2</span>
         <span style="font-size:0.8em; color:#888; margin-left:10px;">(シフト回数: <span id="shift-count">0</span>)</span>
       </div>
 
-      <!-- 次元リセット（プレステージ）バナー -->
       <div id="prestige-container" class="prestige-banner" style="display: none;">
         <div class="prestige-info">
           現在のライナック数: <span id="current-linac-count">0</span> / 次のシフトまで: <span id="next-shift-req">5</span>
@@ -72,7 +69,6 @@
         </div>
       </div>
 
-      <!-- コントロールバー -->
       <div class="control-bar">
         <span class="control-label">購入数:</span>
         <div class="toggle-group">
@@ -82,10 +78,8 @@
         </div>
       </div>
 
-      <!-- 加速器リスト -->
       <div id="generator-container"></div>
 
-      <!-- モバイル/閉じた時用のメニューボタン -->
       <button id="sidebar-open-btn" class="float-menu-btn" onclick="toggleSidebar()">
         ⚙ メニュー
       </button>
@@ -97,6 +91,8 @@
         <div class="tab-container">
           <button class="tab-btn active" onclick="switchTab('stats', this)">統計</button>
           <button class="tab-btn" onclick="switchTab('settings', this)">設定</button>
+          <!-- Infinityタブ（初期は非表示） -->
+          <button class="tab-btn" id="tab-btn-infinity" onclick="switchTab('infinity', this)" style="display:none; color:#d500f9; border-color:#d500f9;">∞ INF</button>
         </div>
         <button class="close-btn" onclick="toggleSidebar()">✕</button>
       </div>
@@ -165,10 +161,40 @@
             <button class="ui-btn danger" onclick="hardReset()">COMPLETE WIPE</button>
           </div>
         </div>
+
+        <!-- Infinityタブ（新規） -->
+        <div id="tab-infinity" class="sidebar-content">
+          <div class="inf-header-info">
+            <h3 style="color:#d500f9; border-color:#d500f9;">INFINITY CORE</h3>
+            <p>所持 IP: <span id="inf-tab-ip-display" style="color:#fff; font-weight:bold;">0</span></p>
+          </div>
+
+          <div class="inf-section">
+            <h4>UPGRADES</h4>
+            <div id="infinity-upgrades-container" class="inf-upgrade-grid">
+              <!-- JSで生成されます -->
+            </div>
+          </div>
+
+          <div class="inf-section" id="break-infinity-section" style="display:none; margin-top:30px; border-top:1px solid #d500f9; padding-top:10px;">
+            <h4 style="color:#ff0055;">BREAK INFINITY</h4>
+            <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">
+              粒子の制限を解除し、無限を超えた世界へ。
+            </p>
+            <button id="btn-break-infinity" class="ui-btn" style="border-color:#ff0055; color:#ff0055;" onclick="unlockBreakInfinity()">
+              UNLOCK BREAK (Req: 1.00e50 IP)
+            </button>
+            <div id="break-active-msg" style="display:none; color:#ff0055; text-align:center; border:1px solid #ff0055; padding:10px;">
+              <strong>LIMIT BROKEN</strong><br>
+              上限解除済み
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div class="sidebar-footer">
-        ver 2.7 Infinity Fix
+        ver 2.8 Infinity Update
       </div>
     </aside>
   </div>
