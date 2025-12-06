@@ -1,12 +1,6 @@
 /**
  * the-Particle v2.7 (Combined & Fixed)
  */
-
-// script.js の一番上の部分（単位定義）をこれに書き換えてください
-
-const SAVE_KEY = 'theParticle_v2_7';
-const INFINITY_LIMIT = 1.79e308; 
-
 // script.js の一番上の部分（単位定義）をこれに書き換えてください
 const SAVE_KEY = 'theParticle_v2_7';
 const INFINITY_LIMIT = 1.79e308;
