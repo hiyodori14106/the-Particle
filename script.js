@@ -1,7 +1,7 @@
 /**
- * the-Particle v2.8.4 (Fix: Unclickable Upgrades)
+ * the-Particle v2.8.5 (Fix: Stable Upgrade UI)
  */
-const SAVE_KEY = 'theParticle_v2_8_4';
+const SAVE_KEY = 'theParticle_v2_8_5';
 let INFINITY_LIMIT = 1.79e308;
 
 // --- 単位定義 ---
@@ -381,12 +381,14 @@ function buyInfinityUpgrade(id) {
     game.infinity.ip -= upgrade.cost;
     if (!game.infinity.upgrades) game.infinity.upgrades = [];
     game.infinity.upgrades.push(id);
-    updateUI(0);
-    // DOMを即時再描画するために一旦クリア
-    const container = document.getElementById('infinity-upgrades-container');
-    if(container) container.innerHTML = '';
-    updateInfinityTab();
+    
+    // データを保存
     saveGame();
+    // UI更新
+    updateUI(0);
+    updateInfinityTab();
+  } else {
+    console.log("IP不足");
   }
 }
 
@@ -540,56 +542,72 @@ function updateStats() {
   }
 }
 
-// ★★★ 修正箇所: 毎フレーム作り直さず、存在チェックで更新する ★★★
+// ★★★ 修正済み：DOM破棄を避けて更新のみ行う ★★★
 function updateInfinityTab() {
   const el = document.getElementById('inf-tab-ip-display');
   if(el) el.textContent = format(game.infinity ? game.infinity.ip : 0);
 
   const container = document.getElementById('infinity-upgrades-container');
   if (container) {
-    // コンテナが空の場合（初回や強制リセット時）のみ生成
+    // 初回のみ要素を作成
     if (container.children.length === 0) {
       INF_UPGRADES.forEach(up => {
         const btn = document.createElement('div');
-        btn.id = `inf-upg-btn-${up.id}`; // ID付与
         btn.className = `inf-upgrade-btn`;
-        btn.onclick = () => buyInfinityUpgrade(up.id);
+        btn.id = `inf-btn-${up.id}`;
+        
+        // HTML構造
+        btn.innerHTML = `
+          <div style="width:100%">
+            <div class="inf-desc">${up.title}: ${up.desc}</div>
+            <div class="inf-effect-val" style="font-size:0.8em; color:#00ff9d;"></div>
+          </div>
+          <div class="inf-cost"></div>
+        `;
+        
+        // イベントリスナは一度だけ登録
+        btn.addEventListener('click', () => {
+           buyInfinityUpgrade(up.id);
+        });
+        
         container.appendChild(btn);
       });
     }
 
-    // 既存要素の中身を更新（DOM再構築を避ける）
+    // 毎フレームの更新処理（テキストとクラスのみ操作）
     INF_UPGRADES.forEach(up => {
-      const btn = document.getElementById(`inf-upg-btn-${up.id}`);
+      const btn = document.getElementById(`inf-btn-${up.id}`);
       if(!btn) return;
 
       const bought = hasUpgrade(up.id);
       const currentIP = (game.infinity && game.infinity.ip) ? game.infinity.ip : 0;
       
-      // クラス更新
+      // クラスの切り替え
       if (bought) {
         btn.classList.add('bought');
         btn.classList.remove('disabled');
       } else {
         btn.classList.remove('bought');
-        if (currentIP < up.cost) btn.classList.add('disabled');
-        else btn.classList.remove('disabled');
+        if (currentIP < up.cost) {
+          btn.classList.add('disabled');
+        } else {
+          btn.classList.remove('disabled');
+        }
       }
 
-      // テキスト更新
+      // 値の更新（innerHTML全体ではなく、要素ごとのtextContent更新）
       let currentEffect = 1;
       try { currentEffect = up.effect(game); } catch(e){}
+      
+      const effectEl = btn.querySelector('.inf-effect-val');
+      if(effectEl) effectEl.textContent = `現在の効果: ${up.formatEffect(currentEffect)}`;
 
-      btn.innerHTML = `
-        <div style="width:100%">
-          <div class="inf-desc">${up.title}: ${up.desc}</div>
-          <div style="font-size:0.8em; color:#00ff9d;">現在の効果: ${up.formatEffect(currentEffect)}</div>
-        </div>
-        <div class="inf-cost">${bought ? 'BOUGHT' : 'COST: ' + format(up.cost) + ' IP'}</div>
-      `;
+      const costEl = btn.querySelector('.inf-cost');
+      if(costEl) costEl.textContent = bought ? 'BOUGHT' : 'COST: ' + format(up.cost) + ' IP';
     });
   }
 
+  // Break Infinity Section
   const breakSec = document.getElementById('break-infinity-section');
   const btnBreak = document.getElementById('btn-break-infinity');
   const msgBreak = document.getElementById('break-active-msg');
@@ -668,9 +686,9 @@ function performInfinityReset() {
   game.generators = getInitialGenerators();
   game.stats.startTime = Date.now();
   
-  // コンテナを一度クリアして再生成を促す
-  const container = document.getElementById('infinity-upgrades-container');
-  if(container) container.innerHTML = '';
+  // コンテナをリセットせず、そのまま値を更新できるようにする
+  // ただし、ゲーム状態が変わったので一度クリアするほうが安全な場合もあるが、
+  // ここではDOM再利用のためクリアしない。updateInfinityTabが整合性をとる。
 
   updateUI(0);
   updateStats();
@@ -910,6 +928,3 @@ function init() {
 }
 
 init();
-
-
-
