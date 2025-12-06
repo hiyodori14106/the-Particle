@@ -381,7 +381,7 @@ body.glitched { animation: shake 0.2s infinite; }
 }
 .news-track {
   position: absolute; top: 5px; white-space: nowrap; will-change: transform;
-  animation: tickerScroll 15s linear infinite;
+  animation: tickerScroll 40s linear infinite;
 }
 #news-content { font-family: var(--font-mono); font-size: 0.9rem; color: var(--color-main); text-shadow: 0 0 5px var(--color-main); }
 @keyframes tickerScroll {
