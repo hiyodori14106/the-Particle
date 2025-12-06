@@ -691,45 +691,61 @@ function init() {
     });
   }
 // =========================================
-//  ショートカットキー機能 (変更なし)
+//  ▼ ここから下を script.js の一番下に貼り付けてください ▼
 // =========================================
+
+// --- ショートカットキー機能 ---
 document.addEventListener('keydown', (e) => {
+  // 入力エリアでは反応しないようにする
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+
   const key = e.key.toLowerCase();
 
+  // 数字キー 1-8: 購入
   if (key >= '1' && key <= '8') {
     const index = parseInt(key) - 1;
     buyGenerator(index);
     animateButton(index);
   }
+
+  // Mキー: 最大購入
   if (key === 'm') {
     game.generators.forEach((_, i) => buyMaxGenerator(i));
-    // 全ボタンが一瞬光る演出
-    for(let i=0; i<8; i++) animateButton(i);
+    for(let i=0; i<8; i++) animateButton(i); // 全ボタン演出
   }
+
+  // Sキー: セーブ
   if (key === 's') {
     e.preventDefault();
     saveGame();
+    // ボタン演出の代わりにセーブ表示を強調
+    const s = document.getElementById('save-status');
+    if(s) {
+        s.textContent = "★ クイックセーブ完了 ★";
+        s.style.color = "#00ff9d";
+        setTimeout(() => { 
+            s.textContent = "オートセーブ有効 (10秒毎)"; 
+            s.style.color = "";
+        }, 2000);
+    }
   }
 });
 
+// ボタンを押した時のピカッとする演出
 function animateButton(index) {
   const btn = document.getElementById(`btn-${index}`);
   if (btn) {
-    btn.classList.add('btn-pressed');
+    btn.classList.add('btn-pressed'); // style.cssのクラスを適用
     setTimeout(() => btn.classList.remove('btn-pressed'), 150);
   }
 }
 
-// =========================================
-//  ニュースティッカー機能 (修正版)
-// =========================================
-
-// ニュースデータ (内容は前回と同じ)
+// --- ニュースティッカー機能 ---
 const NEWS_DATA = [
   { req: 0, text: "システム起動... 観測を開始します。" },
   { req: 0, text: "近所の猫が粒子まみれになっています。" },
   { req: 0, text: "電気代の請求書が怖くてポストを開けられません。" },
+  { req: 0, text: "「キーボードのMキー」で一括購入できるらしいです。" },
   { req: 100, text: "微細な振動が床から伝わってきます。" },
   { req: 1000, text: "「ただの光る点だ」と友人に笑われました。" },
   { req: 1e4, text: "部屋の照明が不要になりました。" },
@@ -739,53 +755,79 @@ const NEWS_DATA = [
   { req: 1e15, text: "銀河系の質量バランスが崩れ始めています。" },
   { req: 1e20, text: "もう何も怖くない。" },
   { req: 1e50, text: "宇宙のデータ容量が圧迫されています。" },
-  { req: 1e100, text: "ERROR: テキストが歪んでいます。" },
-  
-  // 汎用
-  { req: 0, text: "キーボードの 'S' でセーブ、'M' で一括購入できます。" },
-  { req: 0, text: "今日はいい粒子日和ですね。" },
-  { req: 500, text: "開発者「寝不足です」" }
+  { req: 1e100, text: "ERROR: テキストが歪んでいます。" }
 ];
 
-// テキストを更新するだけの関数
 function updateNewsText() {
   const content = document.getElementById('news-content');
   if (!content) return;
 
-  // 条件を満たすニュースを抽出
+  // 現在の粒子数で解放されているニュースを抽出
   const availableNews = NEWS_DATA.filter(n => game.particles >= n.req);
-  
-  // ランダム選出
+  if (availableNews.length === 0) return;
+
+  // ランダムに1つ選ぶ
   const randIndex = Math.floor(Math.random() * availableNews.length);
   content.textContent = availableNews[randIndex].text;
 }
 
-// 初期化とイベント設定
 function initNews() {
   const track = document.querySelector('.news-track');
-  if(track) {
-    // 初回のテキスト設定
+  if (track) {
+    console.log("News Ticker Started."); // 動作確認用ログ
     updateNewsText();
-
-    // アニメーションが1周するたびに('animationiteration')テキストを書き換える
-    // これで止まることなくスムーズに書き換わります
-    track.addEventListener('animationiteration', () => {
-      updateNewsText();
-    });
+    // アニメーションが1周するたびに内容を更新
+    track.addEventListener('animationiteration', updateNewsText);
+  } else {
+    console.error("News Ticker Element Not Found!");
   }
 }
-// --- 初期化 ---
-function init() {
-  const container = document.getElementById('generator-container');
-  // ... (中略) ...
 
+// --- 初期化 (ここがプログラムのスタート地点) ---
+function init() {
+  console.log("Game Initializing...");
+
+  // HTMLの生成
+  const container = document.getElementById('generator-container');
+  if(container) {
+    container.innerHTML = '';
+    getInitialState().generators.forEach((gen, index) => {
+      const row = document.createElement('div');
+      row.className = 'generator-row';
+      row.innerHTML = `
+        <div class="gen-info">
+          <div class="gen-name">
+            ${gen.name} 
+            <span id="auto-badge-${index}" class="auto-badge">Req: 1e${50 + index*10}</span>
+          </div>
+          <div class="gen-amount" id="amount-${index}">0</div>
+          <div class="gen-multiplier" id="mult-${index}">x1.00</div>
+        </div>
+        <div class="btn-group">
+          <button id="btn-${index}" class="buy-btn" onclick="buyGenerator(${index})">
+            1個購入
+          </button>
+          <button id="btn-max-${index}" class="buy-btn max" onclick="buyMaxGenerator(${index})">
+            Buy Max
+          </button>
+        </div>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  // データのロード
   loadGame();
   
-  // ★追加
+  // ★ニュース機能の起動
   initNews();
 
-  // ★重要: 初期化時に「統計」タブを強制的に開く
+  // ★統計タブを強制的に開く
   switchTab('stats');
 
+  // ゲームループ開始
   gameLoop();
 }
+
+// 実行
+init();
