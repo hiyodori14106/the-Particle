@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>the-Particle</title>
-  <!-- スタイルシートの読み込み -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,16 +11,11 @@
   <!-- =========================================
      演出用レイヤー
      ========================================= -->
-  
-  <!-- 1. グリッチ・ノイズ（ランダムな乱れ用） -->
-<div id="glitch-layer" class="glitch-overlay"></div>
+  <div id="glitch-layer" class="glitch-overlay"></div>
 
-  
-  <!-- 2. ビッグ・クランチ（転生演出用） -->
-  <!-- CSSのアニメーションに合わせてパーツを追加しました -->
   <div id="crunch-overlay" class="crunch-overlay">
-    <div class="event-horizon"></div> <!-- 事象の地平線（リング） -->
-    <div class="singularity"></div>   <!-- 特異点（光の粒） -->
+    <div class="event-horizon"></div>
+    <div class="singularity"></div>
     <div class="crunch-message">
       <h1>BIG CRUNCH</h1>
       <p>REWRITING UNIVERSE DATA...</p>
@@ -31,12 +25,13 @@
   <!-- =========================================
      メインレイアウト
      ========================================= -->
+  <!-- 初期状態でモバイル向けに .closed を付与するかはJSで制御します -->
   <div class="app-wrapper" id="app-wrapper">
     
    <!-- メインゲーム画面 -->
     <main class="game-panel">
       
-      <!-- ★追加: ニュースティッカー -->
+      <!-- ニュースティッカー -->
       <div class="news-ticker-container">
         <div class="news-track">
           <span id="news-content">システム起動... 宇宙の観測を開始します。</span>
@@ -50,7 +45,6 @@
           <p id="pps-display">(+0.00 /秒)</p>
         </div>
         
-        <!-- Infinity Point 表示 (IP獲得後に表示) -->
         <div id="ip-display-container" style="display:none;">
           Infinity Points: <span id="ip-val">0</span>
         </div>
@@ -67,15 +61,11 @@
         <div class="prestige-info">
           現在のライナック数: <span id="current-linac-count">0</span> / 次のシフトまで: <span id="next-shift-req">5</span>
         </div>
-        
         <div class="prestige-actions">
-          <!-- 通常のライナックボタン -->
           <button class="prestige-btn" id="btn-linac" onclick="doLinac()">
             <strong>ライナックを実行</strong><br>
             <span style="font-size:0.8em;">生産倍率UP & リセット</span>
           </button>
-          
-          <!-- ライナック・シフトボタン (条件達成で表示) -->
           <button class="prestige-btn shift-btn" id="btn-shift" onclick="doLinacShift()" style="display:none;">
             <strong>ライナック・シフト</strong><br>
             <span style="font-size:0.8em;">全てを失い、ライナック性能強化</span>
@@ -93,7 +83,7 @@
         </div>
       </div>
 
-      <!-- 加速器リスト (JSで自動生成) -->
+      <!-- 加速器リスト -->
       <div id="generator-container"></div>
 
       <!-- モバイル/閉じた時用のメニューボタン -->
@@ -102,7 +92,7 @@
       </button>
     </main>
 
-    <!-- サイドバー (統計・設定) -->
+    <!-- サイドバー -->
     <aside id="sidebar" class="sidebar">
       <div class="sidebar-header">
         <div class="tab-container">
@@ -133,7 +123,6 @@
             <span id="stat-shift" class="stat-val">0 回</span>
           </div>
           
-          <!-- Infinity到達後の統計 -->
           <div id="infinity-stats" style="display:none; margin-top: 20px; border-top: 1px dashed #555; padding-top:10px;">
             <h3 style="color:#d500f9;">COSMIC STATS</h3>
             <div class="stat-row">
@@ -160,19 +149,18 @@
 
           <h3>DATA MANAGEMENT</h3>
           <button class="ui-btn primary" onclick="saveGame()">データをセーブ</button>
-          <div class="status-text" id="save-status">オートセーブ有効 (10秒毎)</div>
+          <div class="status-text" id="save-status" style="margin-top:5px; font-size:0.8em; color:#888;">オートセーブ有効 (10秒毎)</div>
           
           <button class="ui-btn" onclick="exportSave()">セーブデータを書き出し</button>
           <button class="ui-btn" onclick="toggleImportArea()">セーブデータを読み込み</button>
           
-          <!-- インポート/エクスポート用エリア -->
           <div id="io-area" style="display:none; margin-top:10px;">
             <p style="font-size:0.8rem; color:#888; margin-bottom:5px;" id="io-label">データ文字列:</p>
             <textarea id="save-textarea" placeholder="ここにセーブデータを貼り付け..."></textarea>
             <button class="ui-btn primary" id="io-action-btn" onclick="confirmImport()">読み込む</button>
           </div>
 
-          <div class="danger-zone">
+          <div class="danger-zone" style="margin-top:30px;">
             <h4>DANGER ZONE</h4>
             <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">全ての進捗を完全に削除します。</p>
             <button class="ui-btn danger" onclick="hardReset()">COMPLETE WIPE</button>
@@ -181,12 +169,11 @@
       </div>
 
       <div class="sidebar-footer">
-        ver 2.5 Infinity Update
+        ver 2.7 Infinity Fix
       </div>
     </aside>
   </div>
 
-  <!-- ゲームロジックの読み込み -->
   <script src="script.js"></script>
 </body>
 </html>
