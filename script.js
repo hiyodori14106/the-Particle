@@ -1,7 +1,7 @@
 /**
- * the-Particle v2.8.2 (Stable Fix)
+ * the-Particle v2.8.4 (Fix: Unclickable Upgrades)
  */
-const SAVE_KEY = 'theParticle_v2_8';
+const SAVE_KEY = 'theParticle_v2_8_4';
 let INFINITY_LIMIT = 1.79e308;
 
 // --- 単位定義 ---
@@ -25,12 +25,10 @@ const INF_UPGRADES = [
   {
     id: 0,
     title: "Time Dilation",
-    desc: "現在のプレイ時間に応じて生産倍率増加",
+    desc: "通算プレイ時間に応じて生産倍率増加",
     cost: 1,
     effect: (game) => {
-      const start = (game.stats && game.stats.startTime) ? game.stats.startTime : Date.now();
-      const totalSec = (Date.now() - start) / 1000;
-      // 最低1.0倍保証。log10で緩やかに上昇
+      const totalSec = (game.stats.totalTimePlayed || 0);
       return Math.max(1, 1 + Math.log10(totalSec + 10) * 0.5);
     },
     formatEffect: (val) => `x${format(val)}`
@@ -38,11 +36,9 @@ const INF_UPGRADES = [
   {
     id: 1,
     title: "Linac Boost",
-    desc: "ライナック回数に応じてIP獲得量増加",
+    desc: "通算ライナック回数に応じてIP獲得量増加",
     cost: 3,
     effect: (game) => {
-      // stats.totalLinacs は現在の周回のもの。周回累積が欲しい場合は別途保存が必要だが、
-      // ここでは「この周回での努力値」として扱う
       return 1 + ((game.stats.totalLinacs || 0) * 0.1);
     },
     formatEffect: (val) => `x${format(val)} IP`
@@ -50,7 +46,7 @@ const INF_UPGRADES = [
   {
     id: 2,
     title: "Shift Power",
-    desc: "シフト回数に応じて生産倍率増加",
+    desc: "現在のシフト回数に応じて生産倍率増加",
     cost: 5,
     effect: (game) => {
       return Math.pow(2, (game.shifts || 0));
@@ -59,7 +55,7 @@ const INF_UPGRADES = [
   }
 ];
 
-// --- 初期データ生成 ---
+// --- 初期ジェネレーター生成 ---
 function getInitialGenerators() {
   return [
     { id: 0, name: "Accelerator Mk.1", baseCost: 10,   costMult: 1.5, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: true },
@@ -73,15 +69,17 @@ function getInitialGenerators() {
   ];
 }
 
+// --- 初期データ構造 ---
 function getInitialState() {
   return {
     particles: 10,
     linacs: 0, 
     shifts: 0, 
     stats: {
+      startTime: Date.now(),
       totalParticles: 10,
       totalLinacs: 0,
-      startTime: Date.now(),
+      totalTimePlayed: 0
     },
     infinity: {
       ip: 0,
@@ -162,7 +160,6 @@ function getLinacBaseMult() {
 }
 
 function hasUpgrade(id) {
-  // 安全策: infinityオブジェクトがない場合やupgrades配列がない場合を考慮
   if (!game.infinity) return false;
   if (!Array.isArray(game.infinity.upgrades)) game.infinity.upgrades = [];
   return game.infinity.upgrades.includes(id);
@@ -170,19 +167,14 @@ function hasUpgrade(id) {
 
 function getGlobalMultiplier() {
   let mult = 1;
-  
-  // ライナック
   const base = getLinacBaseMult();
   const l = game.linacs || 0;
   mult *= Math.pow(base, l);
 
-  // Infinity Upgrades
   try {
     if (hasUpgrade(0)) mult *= INF_UPGRADES[0].effect(game);
     if (hasUpgrade(2)) mult *= INF_UPGRADES[2].effect(game);
-  } catch(e) {
-    console.warn("Upgrade calculation error", e);
-  }
+  } catch(e) {}
 
   return mult;
 }
@@ -199,10 +191,7 @@ function getShiftReq() {
 
 // --- ゲームループ ---
 function gameLoop() {
-  // フリーズ防止: 必ず最初に次フレームを予約
   requestAnimationFrame(gameLoop);
-
-  // 演出中は計算を止めるが、ループは止めない
   if (isCrunching) return;
 
   const now = Date.now();
@@ -210,16 +199,18 @@ function gameLoop() {
   if (dt > 1) dt = 1; 
   game.lastTick = now;
 
+  // 時間統計更新
+  if (!game.stats.totalTimePlayed) game.stats.totalTimePlayed = 0;
+  game.stats.totalTimePlayed += dt;
+
   if (isNaN(game.particles)) game.particles = 10;
   
-  // Break Infinity チェック
   if (game.infinity && game.infinity.broken) {
     INFINITY_LIMIT = 1e999;
   } else {
     INFINITY_LIMIT = 1.79e308;
   }
 
-  // クランチ発動判定
   if (game.particles >= INFINITY_LIMIT && !(game.infinity && game.infinity.broken)) {
     triggerBigCrunch();
     return;
@@ -228,8 +219,6 @@ function gameLoop() {
   updateGlitchEffect();
 
   const globalMult = getGlobalMultiplier();
-
-  // 生産処理
   const g0 = game.generators[0];
   const pps = g0.amount * g0.production * globalMult;
   const produced = pps * dt;
@@ -248,24 +237,20 @@ function gameLoop() {
     }
   }
 
-  // Autobuyer
   game.autobuyerTimer = (game.autobuyerTimer || 0) + dt;
   if (game.autobuyerTimer >= 0.5) {
     runAutobuyers();
     game.autobuyerTimer = 0;
   }
 
-  // UI更新
   updateUI(pps);
   
-  // サイドバーが開いているときだけ詳細更新
   const wrapper = document.getElementById('app-wrapper');
   if (wrapper && !wrapper.classList.contains('closed')) {
     updateStats();
     updateInfinityTab();
   }
   
-  // オートセーブ
   if (now % 10000 < 20) saveGame(true);
 }
 
@@ -350,19 +335,16 @@ function doLinac() {
   const req = getLinacReq();
   if (game.generators[7].amount < req) return;
   const currentBase = getLinacBaseMult();
-  
-  if (!confirm(`ライナックを実行しますか？\nベース倍率: ${format(currentBase)}倍\n現在のライナック数: ${game.linacs} -> ${game.linacs+1}`)) return;
+  if (!confirm(`ライナックを実行しますか？\n倍率: ${format(currentBase)}倍\nライナック数: ${game.linacs} -> ${game.linacs+1}`)) return;
 
   game.linacs = (game.linacs || 0) + 1;
   game.stats.totalLinacs = (game.stats.totalLinacs || 0) + 1;
-  
   game.particles = 10;
   game.generators.forEach(gen => {
     gen.amount = 0;
     gen.bought = 0;
     gen.production = 1; 
   });
-
   saveGame();
   updateUI(0);
 }
@@ -370,49 +352,41 @@ function doLinac() {
 function doLinacShift() {
   const shiftReq = getShiftReq();
   if ((game.linacs || 0) < shiftReq) return;
-
   const currentBase = getLinacBaseMult();
   const nextBase = currentBase + 0.2;
-
-  if (!confirm(`【警告】ライナック・シフトを実行しますか？\n\n失うもの:\n- 全ての粒子\n- 全てのAccelerator\n- 現在のライナック数 (${game.linacs}回)\n\n得られるもの:\n- ライナック倍率強化 (${format(currentBase)} -> ${format(nextBase)})\n\n`)) return;
+  if (!confirm(`【警告】シフトを実行しますか？\n倍率: ${format(currentBase)} -> ${format(nextBase)}`)) return;
 
   game.shifts = (game.shifts || 0) + 1;
   game.linacs = 0;
   game.particles = 10;
-  
   game.generators.forEach(gen => {
     gen.amount = 0;
     gen.bought = 0;
     gen.production = 1; 
   });
-
   saveGame();
   updateUI(0);
-  alert(`シフト完了！\n現在のライナック倍率が ${format(nextBase)}倍 になりました。`);
+  alert(`シフト完了！現在の倍率: ${format(nextBase)}倍`);
 }
 
 // --- Infinity Logic ---
 function buyInfinityUpgrade(id) {
-  // すでに持っていたら終了
   if (hasUpgrade(id)) return;
-  
   const upgrade = INF_UPGRADES.find(u => u.id === id);
   if (!upgrade) return;
   
-  // 安全なIP取得
   const currentIP = (game.infinity && game.infinity.ip) ? game.infinity.ip : 0;
   
   if (currentIP >= upgrade.cost) {
     game.infinity.ip -= upgrade.cost;
     if (!game.infinity.upgrades) game.infinity.upgrades = [];
     game.infinity.upgrades.push(id);
-    
-    // UIを即時更新
-    updateInfinityTab();
     updateUI(0);
-    saveGame(); // 購入直後にセーブ
-  } else {
-    console.log("Not enough IP");
+    // DOMを即時再描画するために一旦クリア
+    const container = document.getElementById('infinity-upgrades-container');
+    if(container) container.innerHTML = '';
+    updateInfinityTab();
+    saveGame();
   }
 }
 
@@ -433,7 +407,6 @@ function updateUI(pps) {
   const ppsDisplay = document.getElementById('pps-display');
   if(ppsDisplay) ppsDisplay.textContent = `(+${format(pps)} /秒)`;
 
-  // IP表示とタブ制御
   const ipContainer = document.getElementById('ip-display-container');
   const infTabBtn = document.getElementById('tab-btn-infinity');
   const hasReachedInfinity = game.infinity && (game.infinity.crunchCount > 0 || game.infinity.ip > 0);
@@ -450,7 +423,6 @@ function updateUI(pps) {
     if (infTabBtn) infTabBtn.style.display = 'none';
   }
 
-  // 以下、既存のライナック・シフトUI更新などはそのまま
   const shiftStatusBar = document.getElementById('shift-status');
   if (shiftStatusBar) {
     if ((game.shifts || 0) > 0) {
@@ -482,7 +454,7 @@ function updateUI(pps) {
       if (btnLinac) {
         if (game.generators[7].amount >= linacReq) {
           btnLinac.classList.remove('disabled');
-          btnLinac.innerHTML = `<strong>ライナックを実行</strong><br><span style="font-size:0.8em;">生産倍率 x${format(baseMult)} & リセット (Mk.8: ${linacReq}個消費)</span>`;
+          btnLinac.innerHTML = `<strong>ライナックを実行</strong><br><span style="font-size:0.8em;">生産倍率 x${format(baseMult)} & リセット</span>`;
           btnLinac.onclick = doLinac;
         } else {
           btnLinac.classList.add('disabled');
@@ -496,7 +468,7 @@ function updateUI(pps) {
         if (game.linacs >= shiftReq) {
           btnShift.style.display = 'inline-block';
           const nextBase = baseMult + 0.2;
-          btnShift.innerHTML = `<strong>ライナック・シフト</strong><br><span style="font-size:0.8em;">ライナック倍率 ${format(baseMult)} → ${format(nextBase)}</span>`;
+          btnShift.innerHTML = `<strong>ライナック・シフト</strong><br><span style="font-size:0.8em;">次倍率: ${format(nextBase)}</span>`;
         } else {
           btnShift.style.display = 'none';
         }
@@ -510,12 +482,9 @@ function updateUI(pps) {
     const btn = document.getElementById(`btn-${index}`);
     const btnMax = document.getElementById(`btn-max-${index}`);
     if (!btn) return;
-
     const buyAmt = game.settings.buyAmount;
     const cost = getBulkCost(gen, buyAmt);
-    
     const autoBadge = document.getElementById(`auto-badge-${index}`);
-    const threshold = Number('1e' + (50 + index * 10));
     
     if (autoBadge) {
       autoBadge.className = 'auto-badge'; 
@@ -531,7 +500,8 @@ function updateUI(pps) {
           autoBadge.textContent = "AUTO: OFF";
         }
       } else {
-        autoBadge.textContent = `Req: ${format(threshold)}`;
+        const th = Number('1e' + (50 + index * 10));
+        autoBadge.textContent = `Req: ${format(th)}`;
       }
     }
 
@@ -539,18 +509,14 @@ function updateUI(pps) {
     document.getElementById(`mult-${index}`).textContent = `x${format(gen.production * getGlobalMultiplier())}`;
     
     btn.textContent = `${buyAmt}個: ${format(cost)}`;
-    
-    if (game.particles >= cost) btn.classList.remove('disabled');
-    else btn.classList.add('disabled');
-    
-    if (game.particles >= getCost(gen)) btnMax.classList.remove('disabled');
-    else btnMax.classList.add('disabled');
+    if (game.particles >= cost) btn.classList.remove('disabled'); else btn.classList.add('disabled');
+    if (game.particles >= getCost(gen)) btnMax.classList.remove('disabled'); else btnMax.classList.add('disabled');
   });
 }
 
 function updateStats() {
-  const elapsed = (Date.now() - game.stats.startTime) / 1000;
-  document.getElementById('stat-time').textContent = formatTime(elapsed);
+  const currentRunTime = (Date.now() - game.stats.startTime) / 1000;
+  document.getElementById('stat-time').textContent = `${formatTime(currentRunTime)}`;
   document.getElementById('stat-total').textContent = format(game.stats.totalParticles);
 
   const statPrestige = document.getElementById('stat-prestige');
@@ -559,14 +525,12 @@ function updateStats() {
     rowPrestige.style.display = 'flex';
     statPrestige.textContent = `${game.stats.totalLinacs} 回`;
   }
-  
   const statShift = document.getElementById('stat-shift');
   const rowShift = document.getElementById('row-shift');
   if (game.shifts > 0 && statShift && rowShift) {
     rowShift.style.display = 'flex';
     statShift.textContent = `${game.shifts} 回`;
   }
-
   if (game.infinity && game.infinity.crunchCount > 0) {
     const infStats = document.getElementById('infinity-stats');
     if(infStats) infStats.style.display = 'block';
@@ -576,29 +540,46 @@ function updateStats() {
   }
 }
 
+// ★★★ 修正箇所: 毎フレーム作り直さず、存在チェックで更新する ★★★
 function updateInfinityTab() {
   const el = document.getElementById('inf-tab-ip-display');
   if(el) el.textContent = format(game.infinity ? game.infinity.ip : 0);
 
   const container = document.getElementById('infinity-upgrades-container');
   if (container) {
-    container.innerHTML = '';
+    // コンテナが空の場合（初回や強制リセット時）のみ生成
+    if (container.children.length === 0) {
+      INF_UPGRADES.forEach(up => {
+        const btn = document.createElement('div');
+        btn.id = `inf-upg-btn-${up.id}`; // ID付与
+        btn.className = `inf-upgrade-btn`;
+        btn.onclick = () => buyInfinityUpgrade(up.id);
+        container.appendChild(btn);
+      });
+    }
+
+    // 既存要素の中身を更新（DOM再構築を避ける）
     INF_UPGRADES.forEach(up => {
+      const btn = document.getElementById(`inf-upg-btn-${up.id}`);
+      if(!btn) return;
+
       const bought = hasUpgrade(up.id);
-      const btn = document.createElement('div');
-      btn.className = `inf-upgrade-btn ${bought ? 'bought' : ''}`;
-      
-      // 所持IP不足時はdisabled風にするが、クリックは阻害しない（何も起きないだけにする）
       const currentIP = (game.infinity && game.infinity.ip) ? game.infinity.ip : 0;
-      if (!bought && currentIP < up.cost) {
-        btn.classList.add('disabled');
+      
+      // クラス更新
+      if (bought) {
+        btn.classList.add('bought');
+        btn.classList.remove('disabled');
+      } else {
+        btn.classList.remove('bought');
+        if (currentIP < up.cost) btn.classList.add('disabled');
+        else btn.classList.remove('disabled');
       }
-      
+
+      // テキスト更新
       let currentEffect = 1;
-      try {
-        currentEffect = up.effect(game);
-      } catch(e) { currentEffect = 1; }
-      
+      try { currentEffect = up.effect(game); } catch(e){}
+
       btn.innerHTML = `
         <div style="width:100%">
           <div class="inf-desc">${up.title}: ${up.desc}</div>
@@ -606,14 +587,6 @@ function updateInfinityTab() {
         </div>
         <div class="inf-cost">${bought ? 'BOUGHT' : 'COST: ' + format(up.cost) + ' IP'}</div>
       `;
-      
-      if (!bought) {
-        // onclickを関数でラップして確実にバインド
-        btn.onclick = function() {
-          buyInfinityUpgrade(up.id);
-        };
-      }
-      container.appendChild(btn);
     });
   }
 
@@ -631,11 +604,8 @@ function updateInfinityTab() {
     } else {
       btnBreak.style.display = 'block';
       msgBreak.style.display = 'none';
-      if (currentIP < 1e50) {
-         btnBreak.classList.add('disabled');
-      } else {
-         btnBreak.classList.remove('disabled');
-      }
+      if (currentIP < 1e50) btnBreak.classList.add('disabled');
+      else btnBreak.classList.remove('disabled');
     }
   } else {
     breakSec.style.display = 'none';
@@ -645,13 +615,11 @@ function updateInfinityTab() {
 function updateGlitchEffect() {
   const overlay = document.getElementById('glitch-layer');
   if (!overlay) return;
-  
   if (game.infinity && game.infinity.broken && game.particles < 1e250) {
     document.body.classList.remove('glitched');
     overlay.style.opacity = 0;
     return;
   }
-
   if (game.particles < 1e250) {
     document.body.classList.remove('glitched');
     overlay.style.opacity = 0;
@@ -668,40 +636,25 @@ function updateGlitchEffect() {
 // --- ビッグ・クランチ ---
 function triggerBigCrunch() {
   if (isCrunching) return;
-
   const startTime = (game.stats && game.stats.startTime) ? game.stats.startTime : Date.now();
   const currentTime = Date.now() - startTime;
   
-  // Infinityオブジェクト初期化（既存データがない場合）
-  if (!game.infinity) {
-    game.infinity = { ip:0, crunchCount:0, bestTime:null, upgrades:[], broken:false };
-  }
+  if (!game.infinity) game.infinity = { ip:0, crunchCount:0, bestTime:null, upgrades:[], broken:false };
   
-  // IP獲得
   let gainedIP = 1;
-  try {
-    if (hasUpgrade(1)) gainedIP *= INF_UPGRADES[1].effect(game);
-  } catch(e){}
+  try { if (hasUpgrade(1)) gainedIP *= INF_UPGRADES[1].effect(game); } catch(e){}
   
   game.infinity.ip = (game.infinity.ip || 0) + gainedIP;
   game.infinity.crunchCount = (game.infinity.crunchCount || 0) + 1;
-  
   if (game.infinity.bestTime === null || currentTime < game.infinity.bestTime) {
     game.infinity.bestTime = currentTime;
   }
-  
   isCrunching = true;
   saveGame();
-
   const overlay = document.getElementById('crunch-overlay');
-  if(overlay) {
-    overlay.classList.add('active');
-  }
+  if(overlay) overlay.classList.add('active');
   
-  setTimeout(() => {
-    performInfinityReset();
-  }, 5000);
-
+  setTimeout(() => { performInfinityReset(); }, 5000);
   setTimeout(() => {
     if(overlay) overlay.classList.remove('active');
     isCrunching = false;
@@ -709,48 +662,27 @@ function triggerBigCrunch() {
 }
 
 function performInfinityReset() {
-  // 1. Infinityデータは絶対に消さない
-  // 念のためディープコピーしておくが、基本はgameオブジェクトを書き換える方針で
-  const savedInfinity = JSON.parse(JSON.stringify(game.infinity || {}));
-  const savedSettings = JSON.parse(JSON.stringify(game.settings || {}));
-
-  // 2. リセット対象のデータを手動で初期化
-  // これで game = ... による参照切れやデータ消失を防ぐ
-  
   game.particles = 10;
   game.linacs = 0;
   game.shifts = 0;
-  
-  // ジェネレーターのリセット（配列の中身を再生成）
   game.generators = getInitialGenerators();
+  game.stats.startTime = Date.now();
   
-  // Autobuyerのロック状態をリセットする場合（アップグレードで維持したいならここは変更）
-  // 今回はリセットする（要件によるが通常はリセット）
-  
-  // Stats (現在の宇宙) のリセット
-  game.stats.totalParticles = 10;
-  game.stats.totalLinacs = 0;
-  game.stats.startTime = Date.now(); // 時間計測のリセット
-  
-  // 3. Infinityデータの再注入（念のため）
-  game.infinity = savedInfinity;
-  game.settings = savedSettings;
-  game.lastTick = Date.now();
-  
+  // コンテナを一度クリアして再生成を促す
+  const container = document.getElementById('infinity-upgrades-container');
+  if(container) container.innerHTML = '';
+
   updateUI(0);
   updateStats();
   updateInfinityTab();
-  
   document.body.classList.remove('glitched');
-  
   saveGame();
-  console.log("Universe Reborn.");
+  console.log("Universe Reborn. Stats Preserved.");
 }
 
 // --- セーブ・ロード ---
 function saveGame(isAuto = false) {
   if(isCrunching && isAuto) return;
-  
   game.lastTick = Date.now();
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(game));
@@ -770,39 +702,28 @@ function loadGame() {
     try {
       const parsed = JSON.parse(data);
       const fresh = getInitialState();
-      
-      // オブジェクトのマージ
       game = { ...fresh, ...parsed };
       game.stats = { ...fresh.stats, ...(parsed.stats || {}) };
       game.infinity = { ...fresh.infinity, ...(parsed.infinity || {}) };
       game.settings = { ...fresh.settings, ...(parsed.settings || {}) };
-      
-      // 配列等の安全確保
+      if (!game.stats.totalTimePlayed) game.stats.totalTimePlayed = 0;
       if (!Array.isArray(game.infinity.upgrades)) game.infinity.upgrades = [];
       if (game.infinity.ip === undefined) game.infinity.ip = 0;
-      if (game.infinity.broken === undefined) game.infinity.broken = false;
-
       if (parsed.generators) {
         game.generators = parsed.generators.map((g, i) => {
           const freshGen = fresh.generators[i] || g;
           return { 
-            ...freshGen, 
-            ...g,
+            ...freshGen, ...g,
             autoUnlocked: g.autoUnlocked !== undefined ? g.autoUnlocked : freshGen.autoUnlocked,
             autoActive: g.autoActive !== undefined ? g.autoActive : freshGen.autoActive
           };
         });
-      } else {
-        game.generators = fresh.generators;
-      }
+      } else { game.generators = fresh.generators; }
       
       const notSel = document.getElementById('notation-select');
       if(notSel) notSel.value = game.settings.notation;
       setBuyAmount(game.settings.buyAmount);
-
-    } catch(e) {
-      console.error("Save Load Error:", e);
-    }
+    } catch(e) { console.error("Save Load Error:", e); }
   }
 }
 
@@ -825,11 +746,8 @@ function exportSave() {
 function toggleImportArea(forceOpen = false) {
   const area = document.getElementById('io-area');
   if (!area) return;
-  if (forceOpen) {
-    area.style.display = 'block';
-  } else {
-    area.style.display = (area.style.display === 'none') ? 'block' : 'none';
-  }
+  if (forceOpen) area.style.display = 'block';
+  else area.style.display = (area.style.display === 'none') ? 'block' : 'none';
 }
 
 function confirmImport() {
@@ -840,9 +758,7 @@ function confirmImport() {
     JSON.parse(decoded); 
     localStorage.setItem(SAVE_KEY, decoded);
     location.reload();
-  } catch(e) { 
-    alert("データが無効です"); 
-  }
+  } catch(e) { alert("データが無効です"); }
 }
 
 // --- UI操作 ---
@@ -852,24 +768,16 @@ function toggleSidebar() {
 }
 
 function switchTab(name, btn) {
-  document.querySelectorAll('.sidebar-content').forEach(c => {
-    c.classList.remove('active');
-  });
-  
+  document.querySelectorAll('.sidebar-content').forEach(c => c.classList.remove('active'));
   const targetContent = document.getElementById('tab-' + name);
-  if (targetContent) {
-    targetContent.classList.add('active');
-  }
+  if (targetContent) targetContent.classList.add('active');
   
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  if(btn) {
-    btn.classList.add('active');
-  } else {
+  if(btn) btn.classList.add('active');
+  else {
     const btns = document.querySelectorAll('.tab-btn');
     btns.forEach(b => {
-        if(b.getAttribute('onclick') && b.getAttribute('onclick').includes(name)) {
-            b.classList.add('active');
-        }
+        if(b.getAttribute('onclick') && b.getAttribute('onclick').includes(name)) b.classList.add('active');
     });
   }
 }
@@ -968,11 +876,10 @@ function initNews() {
 
 function init() {
   console.log("Game Initializing...");
-
   const container = document.getElementById('generator-container');
   if(container) {
     container.innerHTML = '';
-    getInitialState().generators.forEach((gen, index) => {
+    getInitialGenerators().forEach((gen, index) => {
       const row = document.createElement('div');
       row.className = 'generator-row';
       row.innerHTML = `
@@ -996,7 +903,6 @@ function init() {
       container.appendChild(row);
     });
   }
-
   loadGame();
   initNews();
   switchTab('stats');
@@ -1004,3 +910,6 @@ function init() {
 }
 
 init();
+
+
+
