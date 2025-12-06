@@ -295,7 +295,7 @@ select { width: 100%; padding: 10px; background: #111; color: #fff; border: 1px 
 }
 
 /* =========================================
-   TAB SYSTEM FIX (Integrated)
+   TAB SYSTEM FIX
    ========================================= */
 .sidebar-content { display: none !important; opacity: 0; }
 .sidebar-content.active { display: block !important; opacity: 1; animation: tabFadeIn 0.4s ease forwards; }
