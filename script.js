@@ -44,7 +44,6 @@ const UNITS_JP = [
  '毘ガバ',  // びがば
  '僧褐邏'  // そうかつら (10^120付近)
 ];
-];
 // --- データ初期値 ---
 function getInitialState() {
   return {
