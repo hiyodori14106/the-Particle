@@ -1,9 +1,5 @@
 /**
- * the-Particle v2.7 (Tab Switching Fix)
- * 
- * 修正点:
- * - switchTab関数を強化し、style.displayを直接操作してタブの重なりを強制排除
- * - init関数で起動時に「統計」タブを強制的に開く処理を追加
+ * the-Particle v2.7 (Combined & Fixed)
  */
 
 const SAVE_KEY = 'theParticle_v2_7';
@@ -19,27 +15,22 @@ function getInitialState() {
     particles: 10,
     linacs: 0, 
     shifts: 0, 
-    
     stats: {
       totalParticles: 10,
       totalLinacs: 0,
       startTime: Date.now(),
     },
-    
     infinity: {
       ip: 0,
       crunchCount: 0,
       bestTime: null
     },
-
     settings: {
       notation: 'sci',
       buyAmount: 1
     },
-
     lastTick: Date.now(),
     autobuyerTimer: 0,
-
     generators: [
       { id: 0, name: "Accelerator Mk.1", baseCost: 10,   costMult: 1.5, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: true },
       { id: 1, name: "Accelerator Mk.2", baseCost: 100,  costMult: 1.8, amount: 0, bought: 0, production: 1, autoUnlocked: false, autoActive: true },
@@ -245,22 +236,15 @@ function buyGenerator(index) {
 function buyMaxGenerator(index) {
   const gen = game.generators[index];
   const r = gen.costMult; 
-  
-  // 現在の価格
   const currentCost = gen.baseCost * Math.pow(r, gen.bought);
-  
   if (game.particles < currentCost) return;
 
-  // 最大購入可能数を対数計算で一発算出
-  // k = floor( log_r ( particles * (r-1) / currentCost + 1 ) )
   const numerator = (game.particles * (r - 1)) / currentCost + 1;
   let count = Math.floor(Math.log(numerator) / Math.log(r));
 
   if (count <= 0) return;
 
-  // 総コスト計算: Sum = currentCost * (r^count - 1) / (r - 1)
   const totalCost = currentCost * (Math.pow(r, count) - 1) / (r - 1);
-
   if (game.particles >= totalCost) {
     game.particles -= totalCost;
     gen.amount += count;
@@ -301,7 +285,6 @@ function doLinacShift() {
   if (!confirm(`【警告】ライナック・シフトを実行しますか？\n\n失うもの:\n- 全ての粒子\n- 全てのAccelerator\n- 現在のライナック数 (${game.linacs}回)\n\n得られるもの:\n- ライナック倍率強化 (${format(currentBase)} -> ${format(nextBase)})\n\n`)) return;
 
   game.shifts = (game.shifts || 0) + 1;
-  
   game.linacs = 0;
   game.particles = 10;
   
@@ -384,7 +367,6 @@ function updateUI(pps) {
           btnShift.style.display = 'none';
         }
       }
-
     } else {
       pContainer.style.display = 'none';
     }
@@ -481,7 +463,6 @@ function triggerBigCrunch() {
   if (isCrunching) return;
 
   const currentTime = Date.now() - game.stats.startTime;
-  
   if (!game.infinity) game.infinity = { ip:0, crunchCount:0, bestTime:null };
   
   game.infinity.ip = (game.infinity.ip || 0) + 1;
@@ -565,7 +546,7 @@ function loadGame() {
       
       if (parsed.generators) {
         game.generators = parsed.generators.map((g, i) => {
-          const freshGen = fresh.generators[i];
+          const freshGen = fresh.generators[i] || g;
           return { 
             ...freshGen, 
             ...g,
@@ -623,37 +604,28 @@ function confirmImport() {
     alert("データが無効です"); 
   }
 }
-// =========================================
-// ▼ confirmImport の後ろに貼り付けるコード ▼
-// =========================================
 
-// --- UI操作 (メニューの開閉・タブ切り替え) ---
+// --- UI操作 (統合済み) ---
 function toggleSidebar() { 
   const el = document.getElementById('app-wrapper');
   if(el) el.classList.toggle('closed');
 }
 
 function switchTab(name, btn) {
-  // 1. すべてのコンテンツを隠す
+  // すべてのコンテンツから active を削除（CSSの !important で制御）
   document.querySelectorAll('.sidebar-content').forEach(c => {
-    c.style.display = 'none';
     c.classList.remove('active');
   });
   
-  // 2. 選択されたタブだけを表示
-  const targetId = 'tab-' + name;
-  const targetContent = document.getElementById(targetId);
+  const targetContent = document.getElementById('tab-' + name);
   if (targetContent) {
-    targetContent.style.display = 'block';
     targetContent.classList.add('active');
   }
   
-  // 3. ボタンの見た目更新
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   if(btn) {
     btn.classList.add('active');
   } else {
-    // 初期化時などボタン要素が直接渡されない場合の処理
     const btns = document.querySelectorAll('.tab-btn');
     btns.forEach(b => {
         if(b.getAttribute('onclick') && b.getAttribute('onclick').includes(name)) {
@@ -663,31 +635,22 @@ function switchTab(name, btn) {
   }
 }
 
-// --- ショートカットキー機能 ---
+// ショートカットキー
 document.addEventListener('keydown', (e) => {
-  // 入力エリアでは反応しない
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
-
   const key = e.key.toLowerCase();
-
-  // 数字キー 1-8: 購入
   if (key >= '1' && key <= '8') {
     const index = parseInt(key) - 1;
     buyGenerator(index);
     animateButton(index);
   }
-
-  // Mキー: 最大購入
   if (key === 'm') {
     game.generators.forEach((_, i) => buyMaxGenerator(i));
     for(let i=0; i<8; i++) animateButton(i);
   }
-
-  // Sキー: セーブ
   if (key === 's') {
     e.preventDefault();
     saveGame();
-    // セーブ完了演出
     const s = document.getElementById('save-status');
     if(s) {
         s.textContent = "★ QUICK SAVE! ★";
@@ -700,7 +663,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ボタンを押した時の演出
 function animateButton(index) {
   const btn = document.getElementById(`btn-${index}`);
   if (btn) {
@@ -709,7 +671,7 @@ function animateButton(index) {
   }
 }
 
-// --- ニュースティッカー機能 ---
+// ニュースティッカー
 const NEWS_DATA = [
   { req: 0, text: "システム起動... 観測を開始します。" },
   { req: 0, text: "近所の猫が粒子まみれになっています。" },
@@ -730,10 +692,8 @@ const NEWS_DATA = [
 function updateNewsText() {
   const content = document.getElementById('news-content');
   if (!content) return;
-
   const availableNews = NEWS_DATA.filter(n => game.particles >= n.req);
   if (availableNews.length === 0) return;
-
   const randIndex = Math.floor(Math.random() * availableNews.length);
   content.textContent = availableNews[randIndex].text;
 }
@@ -742,16 +702,22 @@ function initNews() {
   const track = document.querySelector('.news-track');
   if (track) {
     updateNewsText();
-    // アニメーションが1周するたびにテキスト更新
     track.addEventListener('animationiteration', updateNewsText);
   }
 }
 
-// --- 初期化 (プログラムの開始地点) ---
+// モバイル初期化
+function initMobile() {
+  if (window.innerWidth <= 768) {
+    const app = document.getElementById('app-wrapper');
+    if (app) app.classList.add('closed');
+  }
+}
+
+// --- 初期化 ---
 function init() {
   console.log("Game Initializing...");
 
-  // 1. ジェネレーターリストのHTML生成
   const container = document.getElementById('generator-container');
   if(container) {
     container.innerHTML = '';
@@ -780,16 +746,11 @@ function init() {
     });
   }
 
-  // 2. セーブデータのロード
+  // 初期化順序の修正
   loadGame();
-  
-  // 3. ニュース機能の起動
   initNews();
-
-  // 4. 統計タブを初期表示
+  initMobile(); // モバイルならメニューを閉じる
   switchTab('stats');
-
-  // 5. ゲームループ開始
   gameLoop();
 }
 
