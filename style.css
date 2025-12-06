@@ -294,8 +294,27 @@ select { width: 100%; padding: 10px; background: #111; color: #fff; border: 1px 
   .currency-container h2 { font-size: 2.5rem; }
 }
 
+/* Infinity Upgrades */
+.inf-upgrade-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px;
+}
+.inf-upgrade-btn {
+  background: rgba(213, 0, 249, 0.05); border: 1px solid #d500f9;
+  color: #d500f9; padding: 10px; text-align: left;
+  font-family: var(--font-tech); font-size: 0.8rem;
+  transition: all 0.2s; cursor: pointer; min-height: 80px;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.inf-upgrade-btn:hover { background: rgba(213, 0, 249, 0.2); box-shadow: 0 0 10px rgba(213, 0, 249, 0.3); }
+.inf-upgrade-btn.bought { background: #d500f9; color: #000; border-color: #fff; cursor: default; }
+.inf-upgrade-btn.disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+.inf-desc { font-size: 0.75rem; margin-bottom: 5px; line-height: 1.2; color: #e0e0e0; }
+.inf-upgrade-btn.bought .inf-desc { color: #000; font-weight: bold; }
+.inf-cost { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+
+
 /* =========================================
-   TAB SYSTEM FIX
+   TAB SYSTEM FIX (Integrated)
    ========================================= */
 .sidebar-content { display: none !important; opacity: 0; }
 .sidebar-content.active { display: block !important; opacity: 1; animation: tabFadeIn 0.4s ease forwards; }
