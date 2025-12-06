@@ -690,13 +690,145 @@ function init() {
       container.appendChild(row);
     });
   }
+// =========================================
+//  ショートカットキー機能
+// =========================================
+document.addEventListener('keydown', (e) => {
+  // 入力エリアなどで誤爆しないようにチェック
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+
+  const key = e.key.toLowerCase();
+
+  // 1-8: 各ジェネレーターを購入
+  if (key >= '1' && key <= '8') {
+    const index = parseInt(key) - 1;
+    buyGenerator(index);
+    animateButton(index);
+  }
+
+  // M: 全ジェネレーターを最大購入 (Buy Max)
+  if (key === 'm') {
+    game.generators.forEach((_, i) => buyMaxGenerator(i));
+  }
+
+  // S: 手動セーブ
+  if (key === 's') {
+    e.preventDefault(); // ブラウザの保存ショートカットを無効化
+    saveGame();
+  }
+});
+
+// ボタンを押した風の演出
+function animateButton(index) {
+  const btn = document.getElementById(`btn-${index}`);
+  if (btn) {
+    btn.classList.add('btn-pressed');
+    setTimeout(() => btn.classList.remove('btn-pressed'), 100);
+  }
+}
+
+// =========================================
+//  ニュースティッカー機能
+// =========================================
+
+// ニュースメッセージのリスト (条件付き + ランダム)
+// particles の数に応じてロック解除されるイメージですが、
+// 簡易的に「現在の桁数」を見てメッセージプールを混ぜます。
+const NEWS_DATA = [
+  // --- 初期段階 (0 - 1e3) ---
+  { req: 0, text: "科学者がガレージで加速器を作り始めました。" },
+  { req: 0, text: "近所の猫が粒子まみれになっています。" },
+  { req: 0, text: "電気代の請求書が怖くてポストを開けられません。" },
+  { req: 0, text: "「ただの光る点だ」と友人に笑われました。" },
+  { req: 0, text: "電子レンジと加速器を間違えて起動しました。" },
+  { req: 100, text: "微細な振動が床から伝わってきます。" },
+  { req: 100, text: "粒子がコーヒーカップの中に飛び込みました。" },
+  { req: 500, text: "地元の新聞の隅に「謎の光」という記事が載りました。" },
+  
+  // --- 中盤 (1e4 - 1e9) ---
+  { req: 1e4, text: "部屋の照明が粒子の輝きで不要になりました。" },
+  { req: 1e4, text: "近所の子供たちが「光る家」と呼んでいます。" },
+  { req: 1e5, text: "加速器の音が冷蔵庫の音より大きくなりました。" },
+  { req: 1e6, text: "物理学者があなたの家の前でデモ行進をしています。" },
+  { req: 1e6, text: "「宇宙はシミュレーションかもしれない」と誰かが呟きました。" },
+  { req: 1e7, text: "重力異常により、ペンが天井に落ちました。" },
+  { req: 1e8, text: "政府から「電力消費について」の問い合わせが来ています。" },
+  { req: 1e9, text: "世界中のスーパーコンピュータがあなたの計算に追いつけません。" },
+
+  // --- 後半 (1e10 - 1e20) ---
+  { req: 1e10, text: "地球の自転速度がわずかに変化したようです。" },
+  { req: 1e12, text: "空間に亀裂が見えますが、気にしてはいけません。" },
+  { req: 1e15, text: "太陽系外からの通信を受信：「ウルサイ」" },
+  { req: 1e18, text: "銀河系の質量バランスが崩れ始めています。" },
+  { req: 1e20, text: "ブラックホール生成の危険性が指摘されていますが、無視します。" },
+
+  // --- インフレ段階 (1e30 - Infinity) ---
+  { req: 1e30, text: "「数字が大きすぎて読めない」という苦情が殺到中。" },
+  { req: 1e40, text: "宇宙のデータ容量が圧迫されています。" },
+  { req: 1e50, text: "神様がサーバーの再起動を検討しています。" },
+  { req: 1e60, text: "多元宇宙論者があなたを崇拝し始めました。" },
+  { req: 1e80, text: "現実のテクスチャ解像度が低下しています。" },
+  { req: 1e100, text: "ERROR: ニュースフィードが粒子の圧力で歪んでいます。" },
+  { req: 1e150, text: "概念そのものが粒子になりつつあります。" },
+  { req: 1e200, text: "もう何も怖くない。" },
+  { req: 1e300, text: "ビッグクランチは避けられない運命です。" },
+  
+  // --- 汎用・ジョーク (常時表示可能) ---
+  { req: 0, text: "キーボードの 'S' を押すとセーブできます。" },
+  { req: 0, text: "キーボードの 'M' を押すと全購入できます。" },
+  { req: 0, text: "開発者「寝不足です」" },
+  { req: 1000, text: "オートバイア―はあなたの味方です。" },
+  { req: 0, text: "今日はいい粒子日和ですね。" },
+  { req: 0, text: "画面を叩いても生産量は増えません。" },
+  { req: 1e5, text: "このニュースは誰が書いているのでしょうか？" },
+  { req: 1e10, text: "※この物語はフィクションであり、実在の素粒子とは関係ありません。" }
+];
+
+// テキスト更新ロジック
+function updateNewsTicker() {
+  const track = document.querySelector('.news-track');
+  const content = document.getElementById('news-content');
+  if (!track || !content) return;
+
+  // 現在の粒子数以下の条件を持つニュースをフィルタリング
+  const availableNews = NEWS_DATA.filter(n => game.particles >= n.req);
+  
+  // ランダムに1つ選択
+  const randIndex = Math.floor(Math.random() * availableNews.length);
+  const selectedText = availableNews[randIndex].text;
+
+  // テキスト更新
+  content.textContent = selectedText;
+
+  // アニメーションをリセットして再開（これにより文字が変わった瞬間に右端に戻る）
+  // 以前のDOM要素を複製して置換することでアニメーションを強制リセットさせるテクニック
+  const newTrack = track.cloneNode(true);
+  track.parentNode.replaceChild(newTrack, track);
+  
+  // リセット後の要素に対して次回のイベントリスナーを再設定
+  newTrack.addEventListener('animationiteration', updateNewsTicker);
+}
+
+// 初期化時に一度呼び出し、イベントリスナーを設定
+function initNews() {
+  const track = document.querySelector('.news-track');
+  if(track) {
+    track.addEventListener('animationiteration', updateNewsTicker);
+    updateNewsTicker(); // 初回セット
+  }
+}
+// --- 初期化 ---
+function init() {
+  const container = document.getElementById('generator-container');
+  // ... (中略) ...
 
   loadGame();
   
+  // ★追加
+  initNews();
+
   // ★重要: 初期化時に「統計」タブを強制的に開く
   switchTab('stats');
 
   gameLoop();
 }
-
-init();
