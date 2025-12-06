@@ -697,41 +697,51 @@ body.glitched {
 /* ニュースティッカーの枠 */
 .news-ticker-container {
   width: 100%;
-  height: 30px;
+  height: 32px; /* 高さを固定 */
   background: #000;
   border-bottom: 1px solid #333;
   border-top: 1px solid #333;
-  overflow: hidden;
+  overflow: hidden; /* はみ出た部分を隠す */
   position: relative;
   margin-bottom: 15px;
-  display: flex;
-  align-items: center;
+  /* flex関連は削除して単純な箱にする */
 }
 
 /* 流れるテキスト部分 */
 .news-track {
-  white-space: nowrap;
   position: absolute;
-  left: 100%; /* 右端からスタート */
+  top: 5px; /* 上下位置調整 */
+  white-space: nowrap;
   will-change: transform;
+  
+  /* アニメーション設定: 15秒かけて線形に無限ループ */
   animation: tickerScroll 15s linear infinite;
 }
 
 #news-content {
   font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--color-main);
   text-shadow: 0 0 5px var(--color-main);
 }
 
-/* スクロールアニメーション */
+/* スクロールアニメーション定義 */
 @keyframes tickerScroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-150%); } /* 左端へ流れる */
+  /* 開始: 親要素の右端(100%)の外側 */
+  0% { 
+    left: 100%;
+    transform: translateX(0%); 
+  }
+  /* 終了: 自分の幅の分だけ左(-100%)に移動して消える */
+  100% { 
+    left: 0%;
+    transform: translateX(-100vw); /* 画面幅分左へ移動 */
+  }
 }
 
-/* ショートカットキー使用時の視覚フィードバック（任意） */
+/* ショートカットキーのクリック演出 */
 .btn-pressed {
   transform: scale(0.95) !important;
   border-color: #fff !important;
+  box-shadow: 0 0 15px #fff !important;
 }
